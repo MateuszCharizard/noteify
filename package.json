@@ -21,6 +21,7 @@
     "autoprefixer": "^10.4.21",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
+    "firebase": "^11.9.0",
     "framer-motion": "^12.11.3",
     "gsap": "^3.13.0",
     "jszip": "^3.10.1",
