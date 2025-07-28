@@ -14,10 +14,9 @@ import { useDebounce } from 'use-debounce';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { db } from '../lib/firebase'; // Use centralized firestore.js
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, getDoc, setDoc } from 'firebase/firestore';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { supabase } from '../lib/supabase';
 
 export default function NotesApp() {
   const [notes, setNotes] = useState([]);
@@ -37,6 +36,7 @@ export default function NotesApp() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterTag, setFilterTag] = useState('');
   const [previewNote, setPreviewNote] = useState(null);
+  const [theme, setTheme] = useState('light');
   const notesPerPage = 5;
   const autoSaveTimeoutRef = useRef(null);
   const { user, loading } = useAuth();
@@ -45,61 +45,57 @@ export default function NotesApp() {
   // Initialize theme
   useEffect(() => {
     const initializeTheme = async () => {
-      let savedTheme = localStorage.getItem('theme') || 'light';
-      console.log('Notes: Initial theme from localStorage:', savedTheme);
-
+      let savedTheme = 'light';
       if (user) {
-        console.log('Notes: User UID:', user.uid);
         try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          console.log('Notes: User document exists:', userDoc.exists());
-          if (!userDoc.exists()) {
-            console.log('Notes: Creating user document for UID:', user.uid);
-            await setDoc(userDocRef, {
-              displayName: user.displayName || 'User',
-              theme: savedTheme,
-              createdAt: new Date().toISOString(),
-            });
-          } else if (userDoc.data().theme) {
-            savedTheme = userDoc.data().theme;
-            console.log('Notes: Theme from Firestore:', savedTheme);
+          const { data, error } = await supabase
+            .from('users')
+            .select('theme')
+            .eq('id', user.id)
+            .single();
+          if (error && error.code !== 'PGRST116') throw error;
+          if (data && data.theme) {
+            savedTheme = data.theme;
+          } else {
+            await supabase.from('users').upsert([
+              {
+                id: user.id,
+                display_name: user.user_metadata?.display_name || 'User',
+                theme: savedTheme,
+              },
+            ]);
           }
         } catch (error) {
-          console.error('Notes: Error fetching/creating theme from Firestore:', error);
           toast.error('Failed to load theme preference.');
         }
       }
-
-      console.log('Notes: Applying theme:', savedTheme);
+      setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(savedTheme);
-      console.log('Notes: DOM data-theme:', document.documentElement.getAttribute('data-theme'));
-      console.log('Notes: DOM classes:', document.documentElement.className);
     };
     if (!loading && user) {
       initializeTheme();
     }
   }, [user, loading]);
 
-  // Listen for localStorage changes
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'theme') {
-        const newTheme = e.newValue || 'light';
-        console.log('Notes: Theme changed in localStorage:', newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
-        document.documentElement.classList.remove('light', 'dark');
-        document.documentElement.classList.add(newTheme);
-        console.log('Notes: Updated DOM data-theme:', document.documentElement.getAttribute('data-theme'));
-        console.log('Notes: Updated DOM classes:', document.documentElement.className);
-      }
+    const handler = (e) => {
+      const newTheme = e.detail;
+      setTheme(newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(newTheme);
     };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('noteify-theme-change', handler);
+    return () => window.removeEventListener('noteify-theme-change', handler);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
 
   // Tiptap Editor
   const editor = useEditor({
@@ -124,20 +120,19 @@ export default function NotesApp() {
     }
   }, [user, loading, router]);
 
-  // Load notes from Firestore
+  // Load notes from Supabase
   useEffect(() => {
     if (user) {
       const fetchNotes = async () => {
         try {
-          const q = query(collection(db, 'notes'), where('userId', '==', user.uid));
-          const querySnapshot = await getDocs(q);
-          const userNotes = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setNotes(userNotes);
+          const { data, error } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          setNotes(data || []);
         } catch (error) {
-          console.error('Error fetching notes:', error);
           toast.error('Failed to load notes.');
         }
       };
@@ -173,18 +168,18 @@ export default function NotesApp() {
       tags,
       date: date || new Date().toISOString().split('T')[0],
       category: category || 'General',
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       pinned: false,
-      userId: user.uid
+      user_id: user.id,
     };
     try {
-      const docRef = await addDoc(collection(db, 'notes'), newNote);
-      setNotes([{ id: docRef.id, ...newNote }, ...notes]);
+      const { data, error } = await supabase.from('notes').insert([newNote]).select().single();
+      if (error) throw error;
+      setNotes([{ ...data }, ...notes]);
       toast.success('Note created!', { icon: '📝' });
       resetForm();
       setShowNotes(true);
     } catch (error) {
-      console.error('Error adding note:', error);
       toast.error('Failed to create note.');
     }
   };
@@ -200,15 +195,18 @@ export default function NotesApp() {
       tags,
       date,
       category,
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       pinned: activeNote.pinned,
-      userId: user.uid
+      user_id: user.id,
     };
     try {
-      const noteRef = doc(db, 'notes', activeNote.id);
-      await updateDoc(noteRef, updatedNote);
+      const { error } = await supabase
+        .from('notes')
+        .update(updatedNote)
+        .eq('id', activeNote.id);
+      if (error) throw error;
       setNotes(notes.map(note =>
-        note.id === activeNote.id ? { id: activeNote.id, ...updatedNote } : note
+        note.id === activeNote.id ? { ...note, ...updatedNote } : note
       ));
       if (!isAutoSave) {
         toast.success('Note updated!', { icon: '✅' });
@@ -216,19 +214,18 @@ export default function NotesApp() {
         setShowNotes(true);
       }
     } catch (error) {
-      console.error('Error updating note:', error);
       toast.error('Failed to update note.');
     }
-  }, [title, tags, date, category, activeNote, notes, editor, user.uid]);
+  }, [title, tags, date, category, activeNote, notes, editor, user.id]);
 
   const deleteNote = async (id) => {
     try {
-      await deleteDoc(doc(db, 'notes', id));
+      const { error } = await supabase.from('notes').delete().eq('id', id);
+      if (error) throw error;
       setNotes(notes.filter(note => note.id !== id));
       if (activeNote?.id === id) resetForm();
       toast.success('Note deleted!', { icon: '🗑️' });
     } catch (error) {
-      console.error('Error deleting note:', error);
       toast.error('Failed to delete note.');
     }
   };
@@ -236,13 +233,14 @@ export default function NotesApp() {
   const pinNote = async (id) => {
     try {
       const note = notes.find(note => note.id === id);
-      const updatedNote = { ...note, pinned: !note.pinned };
-      const noteRef = doc(db, 'notes', id);
-      await updateDoc(noteRef, { pinned: !note.pinned });
-      setNotes(notes.map(n => (n.id === id ? updatedNote : n)));
+      const { error } = await supabase
+        .from('notes')
+        .update({ pinned: !note.pinned })
+        .eq('id', id);
+      if (error) throw error;
+      setNotes(notes.map(n => (n.id === id ? { ...n, pinned: !n.pinned } : n)));
       toast.success(note.pinned ? 'Note unpinned!' : 'Note pinned!', { icon: '📌' });
     } catch (error) {
-      console.error('Error pinning note:', error);
       toast.error('Failed to pin note.');
     }
   };
@@ -399,7 +397,7 @@ export default function NotesApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-gray-100 dark:from-gray-900 dark:to-gray-800 font-sans transition-colors">
         <div className="text-gray-600 dark:text-gray-300 text-lg font-semibold">Loading...</div>
       </div>
     );
@@ -408,22 +406,20 @@ export default function NotesApp() {
   return (
     <>
       <style jsx>{`
-        :global(*) {
-          user-select: none;
-        }
-        .note-content, .tiptap-editor, .prose {
-          user-select: text;
-        }
+        :global(*) { user-select: none; }
+        .note-content, .tiptap-editor, .prose { user-select: text; }
       `}</style>
-      <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-100 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 font-sans transition-colors duration-500">
         <Toaster
           position="top-right"
           toastOptions={{
-            duration: 2000,
+            duration: 2200,
             style: {
               background: '#fff',
               color: '#1f2937',
-              borderRadius: '8px',
+              borderRadius: '12px',
+              fontWeight: 500,
+              boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
             },
             dark: {
               background: '#1f2937',
@@ -432,33 +428,33 @@ export default function NotesApp() {
           }}
         />
         <main className="flex-1">
-          <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+          <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex justify-between items-center mb-6"
+              className="flex justify-between items-center mb-8"
             >
               <Link href="/">
-                <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                <h1 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300 transition-colors tracking-tight">
                   Noteify
                 </h1>
               </Link>
               <div className="flex items-center gap-4">
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={exportAllNotes}
-                  className="px-3 py-1 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-500 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-500 rounded-xl shadow transition"
                   title="Export All Notes"
                 >
                   Export All
                 </motion.button>
                 <Link href="/settings">
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 shadow"
                     title="Settings"
                   >
                     <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -467,7 +463,7 @@ export default function NotesApp() {
               </div>
             </motion.div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
+            <div className="bg-white/90 dark:bg-gray-900/90 rounded-3xl p-8 shadow-2xl">
               <AnimatePresence>
                 {showNotes && (
                   <motion.div
@@ -766,9 +762,7 @@ export default function NotesApp() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => { resetForm(); setShowNotes(true); }}
-                        className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700
-
- hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-semibold"
+                        className="px-4 py-2 text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-semibold"
                       >
                         Back
                       </motion.button>
@@ -857,8 +851,7 @@ export default function NotesApp() {
             </motion.button>
           </div>
         </main>
-
-        <footer className="bg-gray-100 dark:bg-gray-900 py-4 mt-auto">
+        <footer className="bg-transparent py-6 mt-auto">
           <div className="max-w-5xl mx-auto px-4 md:px-6 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-sm font-bold">
               © {new Date().getFullYear()} Noteify. All rights reserved.

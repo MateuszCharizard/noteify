@@ -5,6 +5,8 @@ import { gsap } from 'gsap';
 import { ScrollTrigger, MotionPathPlugin } from 'gsap/all';
 import { CloudIcon, PencilIcon, MagnifyingGlassIcon, UserGroupIcon, DocumentTextIcon, ShieldCheckIcon, LockClosedIcon, ShareIcon, ClockIcon, StarIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
 
@@ -14,15 +16,57 @@ export default function Home() {
   const testimonialsRef = useRef(null);
   const pricingRef = useRef(null);
   const ctaRef = useRef(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const { user, loading } = useAuth();
+
+  // Fetch theme from Supabase and apply it
+  useEffect(() => {
+    const applyTheme = (themeValue) => {
+      setTheme(themeValue);
+      document.documentElement.setAttribute('data-theme', themeValue);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(themeValue);
+    };
+
+    const fetchTheme = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('theme')
+          .eq('id', user.id)
+          .single();
+        if (!error && data && data.theme) {
+          applyTheme(data.theme);
+        } else {
+          applyTheme('light');
+        }
+      } else {
+        applyTheme('light');
+      }
+    };
+
+    if (!loading) {
+      fetchTheme();
+    }
+  }, [user, loading]);
+
+  // Listen for theme changes from settings page
+  useEffect(() => {
+    const handler = (e) => {
+      const newTheme = e.detail;
+      setTheme(newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(newTheme);
+    };
+    window.addEventListener('noteify-theme-change', handler);
+    return () => window.removeEventListener('noteify-theme-change', handler);
+  }, []);
 
   useEffect(() => {
-    // Theme Handling
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
 
     // Hero Section Animations
     gsap.fromTo(
@@ -90,7 +134,7 @@ export default function Home() {
         gsap.to(link, { scale: 1.1, color: '#60a5fa', duration: 0.3 });
       });
       link.addEventListener('mouseleave', () => {
-        gsap.to(link, { scale: 1, color: isDarkMode ? '#e5e7eb' : '#ffffff', duration: 0.3 });
+        gsap.to(link, { scale: 1, color: theme === 'dark' ? '#e5e7eb' : '#ffffff', duration: 0.3 });
       });
     });
 
@@ -272,7 +316,7 @@ export default function Home() {
 
     // Background Gradient Transitions
     gsap.to('body', {
-      background: isDarkMode
+      background: theme === 'dark'
         ? 'linear-gradient(180deg, #1e293b, #475569)'
         : 'linear-gradient(180deg, #1e40af, #60a5fa)',
       duration: 1,
@@ -285,7 +329,7 @@ export default function Home() {
       },
     });
     gsap.to('body', {
-      background: isDarkMode
+      background: theme === 'dark'
         ? 'linear-gradient(180deg, #475569, #1e293b)'
         : 'linear-gradient(180deg, #60a5fa, #1e3a8a)',
       duration: 1,
@@ -314,41 +358,32 @@ export default function Home() {
       });
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     };
-  }, [isDarkMode]);
+  }, [theme]);
 
   return (
-    <div className="relative min-h-screen font-inter text-gray-900 dark:text-gray-100 transition-colors duration-500" ref={heroRef}>
-      {/* Background */}
-      <div className="hero-bg absolute inset-0 bg-gradient-to-b from-blue-900/50 to-blue-500/30 dark:from-gray-900/50 dark:to-gray-700/30 z-[-1]" />
-
+    <div className="relative min-h-screen font-sans text-gray-900 dark:text-gray-100 transition-colors duration-500 bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
       {/* Navbar */}
-      <nav className="navbar fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-blue-900/80 dark:bg-gray-800/80 backdrop-blur-lg text-white rounded-full px-8 py-4 flex items-center gap-8 shadow-xl transition-all duration-300">
-        <Link href="#home" className="nav-link hover:text-blue-400 dark:hover:text-blue-300 transition-colors">Home</Link>
-        <Link href="#features" className="nav-link hover:text-blue-400 dark:hover:text-blue-300 transition-colors">Features</Link>
-        <Link href="#testimonials" className="nav-link hover:text-blue-400 dark:hover:text-blue-300 transition-colors">Testimonials</Link>
-        <Link href="#pricing" className="nav-link hover:text-blue-400 dark:hover:text-blue-300 transition-colors">Pricing</Link>
-        <Link href="#contact" className="nav-link hover:text-blue-400 dark:hover:text-blue-300 transition-colors">Contact</Link>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="p-2 rounded-full hover:bg-blue-700 dark:hover:bg-gray-700 transition-colors"
-        >
-          {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-        </button>
+      <nav className="navbar fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg text-blue-700 dark:text-blue-200 rounded-full px-8 py-3 flex items-center gap-8 shadow-lg border border-gray-100 dark:border-gray-800">
+        <Link href="#home" className="nav-link font-semibold hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Home</Link>
+        <Link href="#features" className="nav-link font-semibold hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Features</Link>
+        <Link href="#testimonials" className="nav-link font-semibold hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Testimonials</Link>
+        <Link href="#pricing" className="nav-link font-semibold hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Pricing</Link>
+        <Link href="#contact" className="nav-link font-semibold hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Contact</Link>
       </nav>
 
       {/* Hero Section */}
       <section id="home" className="min-h-screen flex items-center justify-center px-4 relative">
-        <div className="text-center max-w-5xl mx-auto">
-          <h1 className="hero-text text-5xl md:text-7xl lg:text-8xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-300 dark:to-blue-500">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="hero-text text-6xl md:text-7xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-700 dark:from-blue-300 dark:to-blue-500 tracking-tight mb-4">
             {Array.from('Noteify').map((char, index) => (
               <span key={index}>{char}</span>
             ))}
           </h1>
-          <p className="hero-subtitle text-xl md:text-2xl lg:text-3xl text-gray-300 dark:text-gray-200 mt-6 max-w-3xl mx-auto">
-            Elevate your productivity with Noteify—crafted for seamless note-taking, collaboration, and organization.
+          <p className="hero-subtitle text-lg md:text-2xl text-gray-500 dark:text-gray-300 mt-4 mb-10 font-medium">
+            Elevate your productivity with a modern, distraction-free note-taking experience.
           </p>
           <Link href="/login">
-            <button className="hero-button mt-10 px-10 py-5 bg-blue-600 dark:bg-blue-500 text-white rounded-full shadow-2xl hover:bg-blue-700 dark:hover:bg-blue-600 hover:scale-105 transition-all duration-300 text-lg font-semibold">
+            <button className="hero-button px-8 py-4 bg-blue-600 dark:bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200 text-lg font-semibold">
               Get Started Free
             </button>
           </Link>
@@ -356,25 +391,24 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm" ref={featuresRef}>
+      <section id="features" className="py-20 bg-transparent">
         <div className="container mx-auto px-4">
-          <h2 className="features-heading text-5xl md:text-6xl font-bold text-center text-gray-800 dark:text-gray-100 mb-20">Why Choose Noteify</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <h2 className="features-heading text-4xl md:text-5xl font-bold text-center text-blue-600 dark:text-blue-400 mb-16 tracking-tight">
+            Why Choose Noteify
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: CloudIcon, title: 'Seamless Sync', desc: 'Sync notes across all devices in real-time with secure cloud technology.' },
-              { icon: PencilIcon, title: 'Rich Formatting', desc: 'Craft stunning notes with markdown, media embeds, and custom templates.' },
-              { icon: MagnifyingGlassIcon, title: 'Smart Search', desc: 'Locate notes instantly with AI-driven search and tag-based filtering.' },
-              { icon: LockClosedIcon, title: 'Robust Security', desc: 'Ensure data safety with end-to-end encryption and 2FA.' },
-              { icon: ShareIcon, title: 'Easy Collaboration', desc: 'Share notes and folders securely with team members.' },
-              { icon: ClockIcon, title: 'Version Control', desc: 'Track and revert changes with comprehensive version history.' },
+              { icon: CloudIcon, title: 'Seamless Sync', desc: 'Sync notes across all devices in real-time.' },
+              { icon: PencilIcon, title: 'Rich Formatting', desc: 'Markdown, media embeds, and custom templates.' },
+              { icon: MagnifyingGlassIcon, title: 'Smart Search', desc: 'Find notes instantly with tags and AI search.' },
+              { icon: LockClosedIcon, title: 'Robust Security', desc: 'End-to-end encryption and 2FA.' },
+              { icon: ShareIcon, title: 'Easy Collaboration', desc: 'Share notes securely with your team.' },
+              { icon: ClockIcon, title: 'Version Control', desc: 'Track and revert changes easily.' },
             ].map((feature, index) => (
-              <div key={index} className="card bg-white dark:bg-gray-900 rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300">
-                <feature.icon className="feature-icon w-14 h-14 text-blue-500 dark:text-blue-400 mb-6" />
-                <h3 className="text-3xl font-semibold text-gray-800 dark:text-gray-100">{feature.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300 mt-3">{feature.desc}</p>
-                <Link href="#" className="learn-more mt-6 inline-block text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 hover:underline font-medium">
-                  Learn More
-                </Link>
+              <div key={index} className="card bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-md p-7 flex flex-col items-center text-center hover:shadow-lg transition-all duration-200">
+                <feature.icon className="feature-icon w-12 h-12 text-blue-500 dark:text-blue-400 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-500 dark:text-gray-300 text-base">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -382,24 +416,26 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-blue-50 dark:bg-gray-700" ref={testimonialsRef}>
+      <section id="testimonials" className="py-20 bg-transparent">
         <div className="container mx-auto px-4">
-          <h2 className="testimonials-heading text-5xl md:text-6xl font-bold text-center text-gray-800 dark:text-gray-100 mb-20">Loved by Our Users</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <h2 className="testimonials-heading text-4xl md:text-5xl font-bold text-center text-blue-600 dark:text-blue-400 mb-16 tracking-tight">
+            Loved by Our Users
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               { name: 'Sarah M.', role: 'Designer', quote: 'Noteify revolutionized my workflow. The formatting and sync features are unmatched!' },
               { name: 'James T.', role: 'Developer', quote: 'Smart search and version history make Noteify a must-have for coders.' },
               { name: 'Emily R.', role: 'Team Lead', quote: 'Collaboration is effortless with Noteify’s secure sharing tools.' },
             ].map((testimonial, index) => (
-              <div key={index} className="testimonial-card bg-white dark:bg-gray-900 rounded-3xl shadow-lg p-8 text-center">
-                <div className="flex justify-center mb-4">
+              <div key={index} className="testimonial-card bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-md p-7 text-center flex flex-col items-center">
+                <div className="flex justify-center mb-2">
                   {[...Array(5)].map((_, i) => (
-                    <StarIcon key={i} className="w-6 h-6 text-yellow-400" />
+                    <StarIcon key={i} className="w-5 h-5 text-yellow-400" />
                   ))}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 italic text-lg">"{testimonial.quote}"</p>
-                <p className="mt-6 font-semibold text-gray-800 dark:text-gray-100 text-xl">{testimonial.name}</p>
-                <p className="text-gray-500 dark:text-gray-400">{testimonial.role}</p>
+                <p className="text-gray-600 dark:text-gray-300 italic text-base mb-4">"{testimonial.quote}"</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100 text-lg">{testimonial.name}</p>
+                <p className="text-gray-400 dark:text-gray-400 text-sm">{testimonial.role}</p>
               </div>
             ))}
           </div>
@@ -407,57 +443,59 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm" ref={pricingRef}>
+      <section id="pricing" className="py-20 bg-transparent">
         <div className="container mx-auto px-4">
-          <h2 className="pricing-heading text-5xl md:text-6xl font-bold text-center text-gray-800 dark:text-gray-100 mb-20">Find Your Perfect Plan</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <h2 className="pricing-heading text-4xl md:text-5xl font-bold text-center text-blue-600 dark:text-blue-400 mb-16 tracking-tight">
+            Find Your Perfect Plan
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 icon: DocumentTextIcon,
                 title: 'Free',
                 price: '$0',
-                desc: 'Great for individuals exploring note-taking.',
-                features: ['Basic note-taking', '5GB storage', 'Sync across 2 devices', 'Community support'],
+                desc: 'For individuals exploring note-taking.',
+                features: ['Basic notes', '5GB storage', 'Sync 2 devices', 'Community support'],
               },
               {
                 icon: UserGroupIcon,
                 title: 'Pro',
                 price: '$9',
-                desc: 'Perfect for professionals needing advanced tools.',
-                features: ['Rich formatting', '50GB storage', 'Sync across 5 devices', 'Offline access'],
+                desc: 'For professionals needing advanced tools.',
+                features: ['Rich formatting', '50GB storage', 'Sync 5 devices', 'Offline access'],
                 popular: true,
               },
               {
                 icon: ShieldCheckIcon,
                 title: 'Team',
                 price: '$19',
-                desc: 'Built for teams with collaboration needs.',
+                desc: 'For teams with collaboration needs.',
                 features: ['Real-time collaboration', 'Unlimited storage', '24/7 support', 'Advanced security'],
               },
             ].map((plan, index) => (
-              <div key={index} className="pricing-card bg-white dark:bg-gray-900 rounded-3xl shadow-lg p-8 relative hover:shadow-2xl transition-all duration-300">
+              <div key={index} className={`pricing-card bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-md p-7 relative flex flex-col items-center text-center hover:shadow-lg transition-all duration-200 ${plan.popular ? 'ring-2 ring-blue-400 dark:ring-blue-500' : ''}`}>
                 {plan.popular && (
-                  <div className="popular-badge absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 dark:bg-blue-400 text-white text-sm font-semibold px-6 py-2 rounded-full">
+                  <div className="popular-badge absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 dark:bg-blue-400 text-white text-xs font-semibold px-4 py-1 rounded-full shadow">
                     Most Popular
                   </div>
                 )}
-                <plan.icon className="pricing-icon w-14 h-14 text-blue-500 dark:text-blue-400 mb-6" />
-                <h3 className="text-3xl font-semibold text-gray-800 dark:text-gray-100">{plan.title}</h3>
-                <p className="text-4xl font-bold text-blue-500 dark:text-blue-400 mt-4">
-                  {plan.price}<span className="text-lg text-gray-600 dark:text-gray-300">/mo</span>
+                <plan.icon className="pricing-icon w-12 h-12 text-blue-500 dark:text-blue-400 mb-4" />
+                <h3 className="text-xl font-semibold">{plan.title}</h3>
+                <p className="text-3xl font-bold text-blue-500 dark:text-blue-400 mt-2 mb-2">
+                  {plan.price}<span className="text-base text-gray-400">/mo</span>
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 mt-3">{plan.desc}</p>
-                <ul className="mt-6 text-gray-600 dark:text-gray-300 space-y-3">
+                <p className="text-gray-500 dark:text-gray-300 mb-4">{plan.desc}</p>
+                <ul className="mb-6 text-gray-500 dark:text-gray-300 space-y-2 text-sm">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center">
-                      <svg className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <li key={i} className="flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                       {feature}
                     </li>
                   ))}
                 </ul>
-                <button className="choose-plan mt-8 px-8 py-4 bg-blue-600 dark:bg-blue-500 text-white rounded-full hover:bg-blue-700 dark:hover:bg-blue-600 hover:px-9 transition-all duration-300 text-lg font-semibold">
+                <button className="choose-plan px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-full hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200 text-base font-semibold">
                   Choose Plan
                 </button>
               </div>
@@ -467,14 +505,14 @@ export default function Home() {
       </section>
 
       {/* CTA Banner */}
-      <section id="cta" className="py-24 bg-blue-600 dark:bg-blue-800 text-white" ref={ctaRef}>
+      <section id="cta" className="py-16 bg-blue-600 dark:bg-blue-800 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="cta-banner text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Productivity?</h2>
-          <p className="text-xl md:text-2xl text-gray-100 mb-8 max-w-3xl mx-auto">
+          <h2 className="cta-banner text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Productivity?</h2>
+          <p className="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl mx-auto">
             Join thousands of users who trust Noteify to organize their ideas and collaborate seamlessly.
           </p>
           <Link href="/login">
-            <button className="px-10 py-5 bg-white text-blue-600 dark:text-blue-800 rounded-full shadow-xl hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg font-semibold">
+            <button className="px-8 py-3 bg-white text-blue-600 dark:text-blue-800 rounded-full shadow hover:bg-gray-100 hover:scale-105 transition-all duration-200 text-lg font-semibold">
               Start Now
             </button>
           </Link>
@@ -482,39 +520,39 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="footer py-16 bg-blue-900 dark:bg-gray-900 text-white">
+      <footer className="footer py-10 bg-transparent text-blue-700 dark:text-blue-300">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div>
-              <h3 className="text-3xl font-bold">Noteify</h3>
-              <p className="mt-4 text-gray-300">Your ultimate platform for note-taking and team collaboration.</p>
+              <h3 className="text-2xl font-bold">Noteify</h3>
+              <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm">Your ultimate platform for note-taking and team collaboration.</p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold">Product</h3>
-              <ul className="mt-4 space-y-3">
-                <li><Link href="#features" className="hover:text-blue-300 transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-blue-300 transition-colors">Pricing</Link></li>
-                <li><Link href="#testimonials" className="hover:text-blue-300 transition-colors">Testimonials</Link></li>
+              <h3 className="text-lg font-semibold">Product</h3>
+              <ul className="mt-2 space-y-2 text-sm">
+                <li><Link href="#features" className="hover:text-blue-400 transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
+                <li><Link href="#testimonials" className="hover:text-blue-400 transition-colors">Testimonials</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-semibold">Company</h3>
-              <ul className="mt-4 space-y-3">
-                <li><Link href="#about" className="hover:text-blue-300 transition-colors">About</Link></li>
-                <li><Link href="#contact" className="hover:text-blue-300 transition-colors">Contact</Link></li>
-                <li><Link href="#careers" className="hover:text-blue-300 transition-colors">Careers</Link></li>
+              <h3 className="text-lg font-semibold">Company</h3>
+              <ul className="mt-2 space-y-2 text-sm">
+                <li><Link href="#about" className="hover:text-blue-400 transition-colors">About</Link></li>
+                <li><Link href="#contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
+                <li><Link href="#careers" className="hover:text-blue-400 transition-colors">Careers</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-semibold">Support</h3>
-              <ul className="mt-4 space-y-3">
-                <li><a href="mailto:support@noteify.com" className="hover:text-blue-300 transition-colors">support@noteify.com</a></li>
-                <li><a href="tel:+18001234567" className="hover:text-blue-300 transition-colors">+1 (800) 123-4567</a></li>
-                <li><Link href="#faq" className="hover:text-blue-300 transition-colors">FAQ</Link></li>
+              <h3 className="text-lg font-semibold">Support</h3>
+              <ul className="mt-2 space-y-2 text-sm">
+                <li><a href="mailto:support@noteify.com" className="hover:text-blue-400 transition-colors">support@noteify.com</a></li>
+                <li><a href="tel:+18001234567" className="hover:text-blue-400 transition-colors">+1 (800) 123-4567</a></li>
+                <li><Link href="#faq" className="hover:text-blue-400 transition-colors">FAQ</Link></li>
               </ul>
             </div>
           </div>
-          <p className="text-center text-gray-400 mt-12">© 2025 Noteify. All rights reserved.</p>
+          <p className="text-center text-gray-400 mt-10 text-xs">© {new Date().getFullYear()} Noteify. All rights reserved.</p>
         </div>
       </footer>
     </div>
