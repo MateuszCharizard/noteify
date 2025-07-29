@@ -135,12 +135,19 @@ export default function App() {
           .from('avatars')
           .upload(`${user.id}/${Date.now()}`, file, { cacheControl: '3600', upsert: true });
         if (error) {
-          setUpdateMessage('Error uploading avatar.');
+          console.error('Avatar Upload Error:', error);
+          setUpdateMessage(`Error: ${error.message}`);
         } else {
           const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
-          await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
-          setProfile({ ...profile, avatar_url: publicUrl });
-          setUpdateMessage('Avatar updated!');
+          const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+          if (updateError) {
+            console.error('Profile Update Error:', updateError);
+            setUpdateMessage(`Error: ${updateError.message}`);
+          } else {
+            // Immediately update the profile state to show the new avatar
+            setProfile({ ...profile, avatar_url: publicUrl });
+            setUpdateMessage('Avatar updated!');
+          }
         }
         setTimeout(() => setUpdateMessage(''), 3000);
       }
@@ -178,7 +185,7 @@ export default function App() {
         <button onClick={handleSignOut} className="px-4 py-2 rounded-full bg-red-500 text-white font-semibold transition-all duration-300 hover:bg-red-600 focus:outline-none">Sign Out</button>
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full">
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full p-4">
         <div className="w-full max-w-lg bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-2xl shadow-lg p-8">
           <div className="flex flex-col items-center mb-6">
             <label className="relative w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-800 transition-all duration-300 hover:scale-105 cursor-pointer flex items-center justify-center mb-4">
