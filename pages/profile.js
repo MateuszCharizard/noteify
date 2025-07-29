@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import * as THREE from 'three';
 
 // This is a stand-in for Next.js's Head component for this environment.
 const Head = ({ children }) => {
@@ -166,6 +167,9 @@ export default function App() {
       <div id="background" ref={backgroundRef} className="absolute inset-0 z-0"></div>
       
       <div className="absolute top-4 right-4 flex items-center gap-4 z-20">
+        <Link href="/notes" className="px-4 py-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold transition-all duration-300 hover:bg-gray-300 dark:hover:bg-gray-700">
+          Notes
+        </Link>
         <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 transition-all duration-300 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none" aria-label="Toggle theme">
           <svg className="w-5 h-5 text-gray-900 dark:text-gray-100" fill="currentColor" viewBox="0 0 24 24">
             {theme === 'light' ? <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.63-.14 2.39-.41-.56.24-1.15.41-1.77.41-3.31 0-6-2.69-6-6s2.69-6 6-6c.62 0 1.21.17 1.77.41-.76-.27-1.56-.41-2.39-.41zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" /> : <path d="M12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm-1 13h2v2h-2zm0-18h2v2h-2zm10 10h2v-2h-2zm-18 0h2v-2H3zm15.66 6.34l1.41 1.41 1.41-1.41-1.41-1.41-1.41 1.41zm-12.72 0l1.41-1.41-1.41-1.41-1.41 1.41 1.41 1.41zm12.72-12.72l1.41-1.41-1.41-1.41-1.41 1.41 1.41 1.41zm-12.72 0l-1.41-1.41-1.41 1.41 1.41 1.41 1.41-1.41z" />}
@@ -174,7 +178,7 @@ export default function App() {
         <button onClick={handleSignOut} className="px-4 py-2 rounded-full bg-red-500 text-white font-semibold transition-all duration-300 hover:bg-red-600 focus:outline-none">Sign Out</button>
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full p-4">
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full">
         <div className="w-full max-w-lg bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-2xl shadow-lg p-8">
           <div className="flex flex-col items-center mb-6">
             <label className="relative w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-800 transition-all duration-300 hover:scale-105 cursor-pointer flex items-center justify-center mb-4">
