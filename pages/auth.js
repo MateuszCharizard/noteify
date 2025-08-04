@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import * as THREE from 'three';
 
-// This is a stand-in for Next.js's Head component for this environment.
+// Stand-in for Next.js's Head component
 const Head = ({ children }) => {
   useEffect(() => {
-    const title = children.find(c => c.type === 'title')?.props.children;
+    const childrenArray = React.Children.toArray(children);
+    const title = childrenArray.find(c => c.type === 'title')?.props.children;
     if (title) document.title = title;
   }, [children]);
   return null;
@@ -12,10 +14,33 @@ const Head = ({ children }) => {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function App() {
+// --- SVG ICONS ---
+const LogoIcon = (props) => (
+  <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path d="M16 3L3 9.75V22.25L16 29L29 22.25V9.75L16 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 17V29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3 9.75L16 17L29 9.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const SunIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+  </svg>
+);
+const MoonIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+  </svg>
+);
+const SpinnerIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" {...props}>
+    <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+  </svg>
+);
+
+export default function AuthPage() {
   const [theme, setTheme] = useState('light');
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
@@ -23,17 +48,117 @@ export default function App() {
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const backgroundRef = useRef(null);
+
+  // Theme Management
+  useEffect(() => {
+    console.log('Initializing theme...');
+    if (typeof window === 'undefined') {
+      console.log('Skipping theme setup: window undefined');
+      return;
+    }
+    const savedTheme = localStorage.getItem('theme');
+    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
+    setTheme(initialTheme);
+    console.log('Theme initialized:', initialTheme);
+  }, []);
 
   useEffect(() => {
-    // Redirect if user is already logged in
+    console.log('Applying theme:', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // 3D Background Effect
+  useEffect(() => {
+    console.log('Starting Three.js setup...');
+    if (typeof window === 'undefined' || !backgroundRef.current) {
+      console.log('Skipping Three.js setup: window undefined or no backgroundRef');
+      return;
+    }
+    try {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      backgroundRef.current.innerHTML = '';
+      backgroundRef.current.appendChild(renderer.domElement);
+      const particleMaterial = new THREE.MeshBasicMaterial({ color: theme === 'dark' ? 0x444444 : 0xbbbbbb, transparent: true, opacity: 0.5 });
+      const particleGeometry = new THREE.SphereGeometry(0.015, 8, 8);
+      const particles = new THREE.Group();
+      for (let i = 0; i < 200; i++) {
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50);
+        particles.add(particle);
+      }
+      scene.add(particles);
+      camera.position.z = 10;
+      let animationFrameId;
+      const animate = () => {
+        animationFrameId = requestAnimationFrame(animate);
+        particles.rotation.y += 0.0002;
+        particleMaterial.color.set(theme === 'dark' ? 0x444444 : 0xbbbbbb);
+        renderer.render(scene, camera);
+      };
+      animate();
+      const handleResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+      };
+      window.addEventListener('resize', handleResize);
+      console.log('Three.js setup complete');
+      return () => {
+        console.log('Cleaning up Three.js');
+        window.removeEventListener('resize', handleResize);
+        cancelAnimationFrame(animationFrameId);
+        renderer.dispose();
+      };
+    } catch (error) {
+      console.error('Three.js setup error:', error.message);
+      setError('Failed to initialize background animation.');
+    }
+  }, [theme]);
+
+  // Auth Check
+  useEffect(() => {
+    console.log('Starting auth check...');
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = '/profile';
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        console.log('Session:', session);
+        if (session) {
+          console.log('Redirecting to /');
+          window.location.href = '/';
+        } else {
+          console.log('No session, showing auth form');
+          setInitialLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error.message);
+        setError('Failed to verify session.');
+        setInitialLoading(false);
       }
     };
+
+    const timer = setTimeout(() => {
+      console.log('Fallback: Setting initialLoading to false');
+      setInitialLoading(false);
+    }, 5000);
+
     checkUser();
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAuth = async (e) => {
@@ -43,28 +168,22 @@ export default function App() {
 
     try {
       if (isSignUp) {
-        // The database trigger will now automatically create the profile.
-        // We pass the username and full name in the options.data field.
-        const { error } = await supabase.auth.signUp({ 
-          email, 
+        const { error } = await supabase.auth.signUp({
+          email,
           password,
           options: {
-            data: {
-              username: username,
-              full_name: fullName,
-            }
+            data: { username, full_name: fullName }
           }
         });
         if (error) throw error;
         alert('Check your email for the confirmation link!');
       } else {
-        // Sign in the user
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Redirect to profile page after login
-        window.location.href = '/profile';
+        window.location.href = '/';
       }
     } catch (error) {
+      console.error('Auth error:', error.message);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -75,95 +194,142 @@ export default function App() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  if (initialLoading) {
+    console.log('Rendering initial loading screen');
+    return (
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
+        <SpinnerIcon className="w-10 h-10 text-[var(--color-text-primary)]" />
+      </div>
+    );
+  }
+
   return (
-    <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen select-none ${theme === 'dark' ? 'bg-black text-gray-100' : 'bg-white text-gray-900'} transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden`}>
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-300 flex flex-col items-center justify-center relative overflow-hidden font-sans p-4">
       <Head>
         <title>Noteify - {isSignUp ? 'Sign Up' : 'Login'}</title>
-        <meta name="description" content="Join Noteify or log in to your account." />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-800 transition-all duration-300 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none z-20"
-        aria-label="Toggle theme"
-      >
-        <svg
-          className="w-5 h-5 text-gray-900 dark:text-gray-100"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          {theme === 'light' ? (
-            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.63-.14 2.39-.41-.56.24-1.15.41-1.77.41-3.31 0-6-2.69-6-6s2.69-6 6-6c.62 0 1.21.17 1.77.41-.76-.27-1.56-.41-2.39-.41zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" />
-          ) : (
-            <path d="M12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm-1 13h2v2h-2zm0-18h2v2h-2zm10 10h2v-2h-2zm-18 0h2v-2H3zm15.66 6.34l1.41 1.41 1.41-1.41-1.41-1.41-1.41 1.41zm-12.72 0l1.41-1.41-1.41-1.41-1.41 1.41 1.41 1.41zm12.72-12.72l1.41-1.41-1.41-1.41-1.41 1.41 1.41 1.41zm-12.72 0l-1.41-1.41-1.41 1.41 1.41 1.41 1.41-1.41z" />
-          )}
-        </svg>
-      </button>
+      <div id="background" ref={backgroundRef} className="absolute inset-0 z-0"></div>
 
-      <main className="w-full max-w-md mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-8 text-center animate-glow">{isSignUp ? 'Create Account' : 'Welcome Back'}</h1>
-        <form onSubmit={handleAuth} className="space-y-6">
+      <header className="absolute top-0 right-0 p-6 z-20">
+        <button
+          onClick={toggleTheme}
+          role="switch"
+          aria-checked={theme === 'dark'}
+          className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
+        >
+          <span className="sr-only">Toggle theme</span>
+          <span
+            className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+              theme === 'dark' ? 'translate-x-6' : 'translate-x-0'
+            }`}
+          >
+            {theme === 'dark' 
+              ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> 
+              : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />
+            }
+          </span>
+        </button>
+      </header>
+
+      <main className="w-full max-w-md mx-auto p-8 z-10 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg border border-[var(--color-border)]">
+        <div className="text-center mb-8">
+          <LogoIcon className="mx-auto h-12 w-12 text-[var(--color-brand)]" />
+          <h1 className="text-3xl font-bold mt-4">{isSignUp ? 'Create Your Account' : 'Welcome Back'}</h1>
+          <p className="text-[var(--color-text-secondary)] mt-1">
+            {isSignUp ? 'Get started with your new workspace.' : 'Sign in to continue to Noteify.'}
+          </p>
+        </div>
+        <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
             <>
               <div>
-                <label className="block text-lg font-semibold mb-2">Full Name</label>
+                <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Full Name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+                  className="w-full px-3 py-2 bg-transparent border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
                   required
                 />
               </div>
               <div>
-                <label className="block text-lg font-semibold mb-2">Username</label>
+                <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Username</label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+                  className="w-full px-3 py-2 bg-transparent border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
                   required
                 />
               </div>
             </>
           )}
           <div>
-            <label className="block text-lg font-semibold mb-2">Email</label>
+            <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+              className="w-full px-3 py-2 bg-transparent border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
               required
             />
           </div>
           <div>
-            <label className="block text-lg font-semibold mb-2">Password</label>
+            <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+              className="w-full px-3 py-2 bg-transparent border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
               required
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full font-semibold transition-all duration-300 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+            className="w-full mt-2 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full font-semibold transition-colors hover:bg-[var(--color-brand-hover)] disabled:opacity-50 flex items-center justify-center"
           >
-            {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
+            {loading ? <SpinnerIcon className="w-5 h-5"/> : (isSignUp ? 'Sign Up' : 'Login')}
           </button>
-          {error && <p className="text-red-500 text-center">{error}</p>}
+          {error && <p className="text-red-500 text-center text-sm mt-2">{error}</p>}
         </form>
-        <p className="mt-6 text-center">
+        <p className="mt-6 text-center text-sm">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="font-semibold underline ml-2">
+          <button onClick={() => setIsSignUp(!isSignUp)} className="font-semibold text-[var(--color-brand)] hover:underline ml-1">
             {isSignUp ? 'Login' : 'Sign Up'}
           </button>
         </p>
       </main>
+
+      <style jsx global>{`
+        :root {
+          --color-background: #f9fafb;
+          --color-bg-subtle: #f3f4f6;
+          --color-bg-subtle-hover: #e5e7eb;
+          --color-bg-subtle-translucent: rgba(249, 250, 251, 0.8);
+          --color-text-primary: #171717;
+          --color-text-secondary: #6b7280;
+          --color-border: #d1d5db;
+          --color-brand: #3b82f6;
+          --color-brand-hover: #2563eb;
+          --color-switch-track: #fcd34d;
+          --color-switch-icon: #f59e0b;
+        }
+        .dark {
+          --color-background: #0a0a0a;
+          --color-bg-subtle: #171717;
+          --color-bg-subtle-hover: #262626;
+          --color-bg-subtle-translucent: rgba(10, 10, 10, 0.8);
+          --color-text-primary: #f5f5f5;
+          --color-text-secondary: #a3a3a3;
+          --color-border: #4b5563;
+          --color-brand: #3b82f6;
+          --color-brand-hover: #60a5fa;
+          --color-switch-track: #4f46e5;
+          --color-switch-icon: #c7d2fe;
+        }
+      `}</style>
     </div>
   );
 }
