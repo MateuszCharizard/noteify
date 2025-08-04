@@ -187,7 +187,9 @@ export default function Auth({ session }) {
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
           </button>
           {success && <p className="text-green-500 text-center text-sm">{success}</p>}
+          }
           {error && <p className="text-red-500 text-center">{error}</p>}
+          }
         </form>
         <p className="mt-6 text-center">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
