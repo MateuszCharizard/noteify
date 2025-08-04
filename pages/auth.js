@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
 
 // This is a stand-in for Next.js's Head component for this environment.
@@ -15,7 +16,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function App() {
+export default function Auth({ session }) {
+  const router = useRouter();
   const [theme, setTheme] = useState('light');
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
@@ -24,27 +26,40 @@ export default function App() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     // Redirect if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = '/profile';
-      }
-    };
-    checkUser();
-  }, []);
+    if (session) {
+      router.push('/notes');
+    }
+  }, [session, router]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (isSignUp && (!username || !fullName)) {
+      setError('Username and full name are required for sign up');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setSuccess('');
 
     try {
       if (isSignUp) {
-        // The database trigger will now automatically create the profile.
-        // We pass the username and full name in the options.data field.
         const { error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -56,16 +71,20 @@ export default function App() {
           }
         });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        setSuccess('Account created successfully! You can now sign in.');
+        setIsSignUp(false);
+        // Clear form
+        setEmail('');
+        setPassword('');
+        setUsername('');
+        setFullName('');
       } else {
-        // Sign in the user
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Redirect to profile page after login
-        window.location.href = '/profile';
+        // Redirect will be handled by _app.js auth state change
       }
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -74,6 +93,11 @@ export default function App() {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  // Don't render if user is authenticated (will redirect)
+  if (session) {
+    return null;
+  }
 
   return (
     <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen select-none ${theme === 'dark' ? 'bg-black text-gray-100' : 'bg-white text-gray-900'} transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden`}>
@@ -102,7 +126,9 @@ export default function App() {
       </button>
 
       <main className="w-full max-w-md mx-auto p-8">
+        <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-8 text-center animate-glow">{isSignUp ? 'Create Account' : 'Welcome Back'}</h1>
+        </div>
         <form onSubmit={handleAuth} className="space-y-6">
           {isSignUp && (
             <>
@@ -112,8 +138,9 @@ export default function App() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300 transition-all duration-200"
                   required
+                  disabled={loading}
                 />
               </div>
               <div>
@@ -122,8 +149,9 @@ export default function App() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+                  className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300 transition-all duration-200"
                   required
+                  disabled={loading}
                 />
               </div>
             </>
@@ -134,8 +162,9 @@ export default function App() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300 transition-all duration-200"
               required
+              disabled={loading}
             />
           </div>
           <div>
@@ -144,8 +173,10 @@ export default function App() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300"
+              className="w-full px-4 py-2 bg-transparent border border-gray-400 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-300 transition-all duration-200"
               required
+              minLength="6"
+              disabled={loading}
             />
           </div>
           <button
@@ -155,11 +186,20 @@ export default function App() {
           >
             {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
           </button>
+          {success && <p className="text-green-500 text-center text-sm">{success}</p>}
           {error && <p className="text-red-500 text-center">{error}</p>}
         </form>
         <p className="mt-6 text-center">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="font-semibold underline ml-2">
+          <button 
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError(null);
+              setSuccess('');
+            }} 
+            className="font-semibold underline ml-2 hover:text-blue-500 transition-colors duration-200"
+            disabled={loading}
+          >
             {isSignUp ? 'Login' : 'Sign Up'}
           </button>
         </p>
