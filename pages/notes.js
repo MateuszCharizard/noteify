@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Avatar from '../components/Avatar';
 
 // Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,56 +13,31 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- Icon Components ---
-const SunIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-  </svg>
-);
-const MoonIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-  </svg>
-);
-const PlusIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);
-const TrashIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  </svg>
-);
-const SearchIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-  </svg>
-);
-const FileTextIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
-  </svg>
-);
-const MenuIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
-  </svg>
-);
-const CloseIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
+const SunIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>);
+const MoonIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>);
+const PlusIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>);
+const TrashIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
+const SearchIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>);
+const FileTextIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>);
+const MenuIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>);
+const CloseIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
+const CogIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>);
+const LogOutIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>);
 
-// --- Main App Component ---
+// --- Theme Definitions ---
+const themes = [
+  { id: 'light', name: 'Light', vars: { '--color-background': '#f9fafb', '--color-bg-sidebar': 'rgba(249, 250, 251, 0.8)', '--color-bg-subtle': '#f3f4f6', '--color-bg-subtle-hover': '#e5e7eb', '--color-text-primary': '#171717', '--color-text-secondary': '#6b7280', '--color-border': '#e5e7eb', '--color-brand': '#3b82f6' } },
+  { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-sidebar': 'rgba(10, 10, 10, 0.8)', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3a3', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
+  { id: 'sunset', name: 'Sunset', vars: { '--color-background': '#0f172a', '--color-bg-sidebar': 'rgba(15, 23, 42, 0.8)', '--color-bg-subtle': '#1e293b', '--color-bg-subtle-hover': '#334155', '--color-text-primary': '#f1f5f9', '--color-text-secondary': '#94a3b8', '--color-border': '#334155', '--color-brand': '#fb923c' } },
+  { id: 'forest', name: 'Forest', vars: { '--color-background': '#1a201c', '--color-bg-sidebar': 'rgba(26, 32, 28, 0.8)', '--color-bg-subtle': '#2d3831', '--color-bg-subtle-hover': '#3a4a40', '--color-text-primary': '#e8f5e9', '--color-text-secondary': '#a5d6a7', '--color-border': '#3a4a40', '--color-brand': '#66bb6a' } },
+];
+
 export default function NotesPage() {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === 'undefined') return 'light';
-    const savedTheme = localStorage.getItem('theme');
-    const userPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return savedTheme || (userPrefersDark ? 'dark' : 'light');
-  });
-
+  // --- State Definitions ---
+  const [theme, setTheme] = useState('dark');
+  const [animatedBg, setAnimatedBg] = useState(true);
+  const [starCount, setStarCount] = useState(500);
+  const [starSpeed, setStarSpeed] = useState(0.0002);
   const [notes, setNotes] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,74 +46,78 @@ export default function NotesPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
-  const backgroundRef = useRef(null);
-  const debounceTimeout = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [activeSettingsTab, setActiveSettingsTab] = useState('personalisation');
+  const [accountForm, setAccountForm] = useState({ full_name: '', username: '' });
 
+  // --- Refs ---
+  const backgroundRef = useRef(null);
+  const debounceTimeout = useRef(null);
+
+  // --- Effects ---
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
+    const selectedTheme = themes.find(t => t.id === theme) || themes[1];
+    document.documentElement.setAttribute('data-theme', selectedTheme.id);
+    Object.entries(selectedTheme.vars).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
   }, [theme]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !backgroundRef.current) return;
+    if (typeof window === 'undefined' || !backgroundRef.current || !animatedBg) {
+      if (backgroundRef.current) backgroundRef.current.innerHTML = '';
+      return;
+    }
+    const isMobile = window.innerWidth <= 640;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     backgroundRef.current.innerHTML = '';
     backgroundRef.current.appendChild(renderer.domElement);
-
-    const stars = new THREE.Group();
-    const starGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+    const adjustedStarCount = isMobile ? Math.floor(starCount / 2) : starCount;
+    const starGeometry = new THREE.SphereGeometry(isMobile ? 0.03 : 0.05, 16, 16);
     const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-
-    for (let i = 0; i < 500; i++) {
+    const stars = new THREE.Group();
+    for (let i = 0; i < adjustedStarCount; i++) {
       const star = new THREE.Mesh(starGeometry, starMaterial);
       star.position.set((Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150);
       stars.add(star);
     }
     scene.add(stars);
-    camera.position.z = 50;
-
+    camera.position.z = isMobile ? 60 : 50;
     let mouseX = 0;
     const onMouseMove = (e) => { mouseX = e.clientX; };
     document.addEventListener('mousemove', onMouseMove);
-
     let animationFrameId;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      stars.rotation.y += 0.0002;
+      stars.rotation.y += isMobile ? starSpeed / 2 : starSpeed;
       const targetRotation = (mouseX / window.innerWidth - 0.5) * 0.2;
       camera.rotation.y += (targetRotation - camera.rotation.y) * 0.02;
-      starMaterial.opacity = theme === 'dark' ? 0.7 : 0.3;
+      starMaterial.opacity = theme === 'light' ? 0.3 : 0.7;
       renderer.render(scene, camera);
     };
     animate();
-
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     };
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('mousemove', onMouseMove);
       cancelAnimationFrame(animationFrameId);
-      renderer.dispose();
+      if (renderer) renderer.dispose();
+      if (backgroundRef.current) backgroundRef.current.innerHTML = '';
     };
-  }, [theme]);
+  }, [theme, animatedBg, starCount, starSpeed]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -152,19 +132,41 @@ export default function NotesPage() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  useEffect(() => {
+    if (showSettingsModal && profile) {
+      setAccountForm({ full_name: profile.full_name || '', username: profile.username || '' });
+    }
+  }, [showSettingsModal, profile]);
+
+  // --- Data & Handler Functions ---
   const fetchData = async (user) => {
     setLoading(true);
     try {
       const { data: notesData, error: notesError } = await supabase.from('notes').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (notesError) throw notesError;
       const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (profileError) throw profileError;
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
       setNotes(notesData || []);
       if (notesData?.length > 0) setActiveNote(notesData[0]);
       setProfile(profileData);
+      setTheme(profileData?.theme || 'dark');
+      setAnimatedBg(profileData?.animated_bg ?? true);
+      setStarCount(profileData?.star_count || 500);
+      setStarSpeed(profileData?.star_speed || 0.0002);
+      setAccountForm({
+        full_name: profileData?.full_name || '',
+        username: profileData?.username || ''
+      });
     } catch (error) {
       console.error("Error fetching data:", error);
-      setToastMessage('Error: Could not load your notes.');
+      setToastMessage('Error: Could not load your data.');
     } finally {
       setLoading(false);
     }
@@ -209,13 +211,13 @@ export default function NotesPage() {
     }, 800);
   };
 
-  const handleDeleteNote = async () => {
-    if (!noteToDelete) return;
+  const handleDeleteNote = async (noteId) => {
+    if (!noteId) return;
     try {
-      await supabase.from('notes').delete().eq('id', noteToDelete);
-      const remainingNotes = notes.filter((note) => note.id !== noteToDelete);
+      await supabase.from('notes').delete().eq('id', noteId);
+      const remainingNotes = notes.filter((note) => note.id !== noteId);
       setNotes(remainingNotes);
-      if (activeNote?.id === noteToDelete) {
+      if (activeNote?.id === noteId) {
         setActiveNote(remainingNotes[0] || null);
       }
       setToastMessage('Note deleted.');
@@ -223,14 +225,45 @@ export default function NotesPage() {
       console.error("Delete error:", error);
       setToastMessage('Error: Could not delete note.');
     } finally {
-      closeDeleteModal();
+      setShowDeleteModal(false);
+      setNoteToDelete(null);
     }
   };
 
-  const openDeleteModal = (noteId) => { setNoteToDelete(noteId); setShowDeleteModal(true); };
-  const closeDeleteModal = () => { setShowDeleteModal(false); setNoteToDelete(null); };
-  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const handleSettingsUpdate = async (settings) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (settings.theme) setTheme(settings.theme);
+    if (settings.animated_bg !== undefined) setAnimatedBg(settings.animated_bg);
+    if (settings.star_count) setStarCount(settings.star_count);
+    if (settings.star_speed) setStarSpeed(settings.star_speed);
+    if (settings.avatar_url) setProfile(p => ({...p, avatar_url: settings.avatar_url}));
+    const { error } = await supabase.from('profiles').update(settings).eq('id', user.id);
+    if (error) {
+      setToastMessage('Error saving settings.');
+      console.error(error);
+    } else {
+      setToastMessage('Settings saved!');
+    }
+  };
+
+  const handleAccountUpdate = async (e) => {
+    e.preventDefault();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const updates = { id: user.id, ...accountForm, updated_at: new Date() };
+    const { error } = await supabase.from('profiles').upsert(updates);
+    if (error) {
+      setToastMessage('Error updating profile.');
+    } else {
+      setProfile(prev => ({ ...prev, ...accountForm }));
+      setToastMessage('Profile updated!');
+    }
+  };
+
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const avatarSrc = profile?.avatar_url || `https://avatar.vercel.sh/${profile?.username || 'A'}.png?size=32`;
+
   const filteredNotes = notes.filter(note =>
     (note.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (note.content?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -238,132 +271,230 @@ export default function NotesPage() {
     (note.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => setToastMessage(''), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
-
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-bg-subtle)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-text-primary)]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-[var(--color-text-primary)]"></div>
       </div>
     );
   }
 
-  const avatarSrc = profile?.avatar_url || `https://avatar.vercel.sh/${profile?.username || 'A'}.png?size=32`;
-
   return (
     <div className="h-screen font-sans bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-300 flex overflow-hidden">
-      <Head>
-        <title>Noteify - Your Notes</title>
-      </Head>
+      <Head><title>Noteify - Your Notes</title></Head>
 
       <div id="background" ref={backgroundRef} className="fixed inset-0 z-0 opacity-50"></div>
 
-      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 max-w-xs ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        <div className="bg-neutral-800 text-white px-6 py-2 rounded-full shadow-lg text-sm font-medium">{toastMessage}</div>
-      </div>
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 max-w-xs sm:max-w-sm opacity-100 translate-y-0">
+          <div className="bg-neutral-800 text-white px-4 sm:px-6 py-2 rounded-full shadow-lg text-xs sm:text-sm font-medium">{toastMessage}</div>
+        </div>
+      )}
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeDeleteModal}></div>
-          <div role="dialog" className="relative z-10 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4 sm:p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Delete Note</h3>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-2">Are you sure? This action cannot be undone.</p>
-            <div className="flex justify-end gap-4 mt-6">
-              <button onClick={closeDeleteModal} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors">Cancel</button>
-              <button onClick={handleDeleteNote} className="px-4 py-2 text-sm font-semibold bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Delete</button>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)}></div>
+          <div role="dialog" className="relative z-10 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-4 sm:p-6 w-full max-w-xs sm:max-w-sm shadow-xl">
+            <h3 className="text-base sm:text-lg font-semibold text-[var(--color-text-primary)]">Delete Note</h3>
+            <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-2">Are you sure? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3 sm:gap-4 mt-4 sm:mt-6">
+              <button onClick={() => setShowDeleteModal(false)} className="px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm font-semibold bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors">Cancel</button>
+              <button onClick={() => handleDeleteNote(noteToDelete)} className="px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm font-semibold bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Delete</button>
             </div>
           </div>
         </div>
       )}
 
-      <aside className={`fixed lg:static z-30 w-72 min-h-screen bg-[var(--color-bg-sidebar)] backdrop-blur-sm border-r border-[var(--color-border)] flex flex-col transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="p-4 flex-shrink-0 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h1 className="font-bold text-xl text-[var(--color-text-primary)]">Noteify</h1>
-          <button onClick={toggleSidebar} className="lg:hidden p-2 rounded-md text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors"><CloseIcon className="w-5 h-5" /></button>
-        </div>
-        <div className="p-4 flex-shrink-0">
-          <button onClick={handleCreateNote} className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[var(--color-brand)] text-white rounded-md hover:bg-[var(--color-brand-hover)] transition-colors font-semibold text-sm"><PlusIcon className="w-4 h-4" /> New Note</button>
-        </div>
-        <div className="px-4 pb-4 flex-shrink-0">
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-placeholder)]" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 pl-10 text-sm bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none transition-colors"
-            />
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
+          <div role="dialog" className="relative z-10 bg-white/70 dark:bg-[#1e293b]/80 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-2xl shadow-2xl text-[var(--color-text-primary)] flex flex-col max-h-[90vh] backdrop-blur-2xl" style={{boxShadow:'0 8px 32px 0 rgba(31,38,135,0.25)'}}>
+            <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
+              <div className="flex gap-2 sm:gap-4">
+                <button onClick={() => setActiveSettingsTab('personalisation')} className={`px-3 py-1 text-sm font-semibold rounded-full transition-all duration-200 ${activeSettingsTab === 'personalisation' ? 'bg-[var(--color-brand)] text-white shadow-md' : 'bg-white/60 dark:bg-[#334155]/60 text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Personalisation</button>
+                <button onClick={() => setActiveSettingsTab('account')} className={`px-3 py-1 text-sm font-semibold rounded-full transition-all duration-200 ${activeSettingsTab === 'account' ? 'bg-[var(--color-brand)] text-white shadow-md' : 'bg-white/60 dark:bg-[#334155]/60 text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Account</button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {activeSettingsTab === 'personalisation' && (
+                <div className="space-y-10">
+                  <div>
+                    <h3 className="font-semibold text-base mb-4 tracking-wide">Color Theme</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {themes.map(t => (
+                        <div key={t.id} className="flex flex-col items-center">
+                          <button onClick={() => handleSettingsUpdate({ theme: t.id })} className={`w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center shadow-md ${theme === t.id ? 'border-[var(--color-brand)] scale-105 ring-2 ring-[var(--color-brand)]' : 'border-[var(--color-border)] hover:scale-105'}`} style={{ background: t.vars['--color-background'], color: t.vars['--color-text-primary'] }}>
+                            <span className="block w-7 h-7 sm:w-10 sm:h-10 rounded-full" style={{ background: t.vars['--color-brand'] }}></span>
+                          </button>
+                          <p className="text-center text-xs sm:text-sm mt-2 font-medium opacity-80">{t.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t border-[var(--color-border)] pt-8">
+                    <h3 className="font-semibold text-base mb-4 tracking-wide">Animated Background</h3>
+                    <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-[#334155]/60 rounded-2xl shadow-sm">
+                      <label htmlFor="bg-toggle" className="font-medium text-sm">Enable Animation</label>
+                      <button onClick={() => handleSettingsUpdate({ animated_bg: !animatedBg })} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}> 
+                        <span className={`block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform duration-200 ${animatedBg ? 'translate-x-7' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                    <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}> 
+                      <div>
+                        <label htmlFor="star-count" className="text-sm flex justify-between font-medium"><span>Star Count</span><span>{starCount}</span></label>
+                        <input id="star-count" type="range" min="100" max="2000" step="100" value={starCount} onChange={(e) => setStarCount(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_count: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
+                      </div>
+                      <div>
+                        <label htmlFor="star-speed" className="text-sm flex justify-between font-medium"><span>Animation Speed</span><span>{(starSpeed * 10000).toFixed(1)}</span></label>
+                        <input id="star-speed" type="range" min="0.0001" max="0.001" step="0.0001" value={starSpeed} onChange={(e) => setStarSpeed(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_speed: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+              )}
+              {activeSettingsTab === 'account' && profile && (
+                <form onSubmit={handleAccountUpdate} className="space-y-8">
+                  <div>
+                    <h3 className="font-semibold text-base mb-4 tracking-wide">Profile Picture</h3>
+                    <div className="flex items-center gap-4">
+                      <Avatar url={profile.avatar_url} onUpload={(base64Str) => handleSettingsUpdate({ avatar_url: base64Str })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="fullName" className="block text-sm font-medium mb-1">Full Name</label>
+                      <input type="text" id="fullName" value={accountForm.full_name} onChange={e => setAccountForm({...accountForm, full_name: e.target.value})} className="w-full p-3 text-sm bg-white/70 dark:bg-[#1e293b]/70 rounded-xl focus:ring-2 focus:ring-[var(--color-brand)] border border-[var(--color-border)] outline-none shadow-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
+                      <input type="text" id="username" value={accountForm.username} onChange={e => setAccountForm({...accountForm, username: e.target.value})} className="w-full p-3 text-sm bg-white/70 dark:bg-[#1e293b]/70 rounded-xl focus:ring-2 focus:ring-[var(--color-brand)] border border-[var(--color-border)] outline-none shadow-sm" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-4">
+                    <button type="submit" className="px-6 py-2 text-sm font-semibold bg-[var(--color-brand)] text-white rounded-full shadow-md hover:opacity-90 transition-opacity">Save Changes</button>
+                  </div>
+                </form>
+              )}
+            </div>
+            <div className="p-4 border-t border-[var(--color-border)] flex-shrink-0 flex justify-between items-center gap-4">
+              <button onClick={async () => { await supabase.auth.signOut(); setToastMessage('Logging out...'); }} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-400 font-semibold px-4 py-2 rounded-full bg-white/60 dark:bg-[#334155]/60 shadow-sm transition-all"><LogOutIcon className="w-5 h-5"/> Log Out</button>
+              <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
+            </div>
           </div>
         </div>
-        <nav className="flex-grow overflow-y-auto p-4 space-y-2">
+      )}
+
+      <aside className={`fixed lg:static z-30 w-64 sm:w-72 min-h-screen bg-[var(--color-bg-sidebar)] backdrop-blur-sm border-r border-[var(--color-border)] flex flex-col transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-3 sm:p-4 flex-shrink-0 border-b border-[var(--color-border)] flex items-center justify-between">
+          <Link href="/notes" className="flex items-center gap-2 group">
+            <FileTextIcon className="w-5 sm:w-6 h-5 sm:h-6 text-[var(--color-brand)] group-hover:scale-110 transition-transform" />
+            <h1 className="font-bold text-lg sm:text-xl text-[var(--color-text-primary)]">Noteify</h1>
+          </Link>
+          <button onClick={toggleSidebar} className="lg:hidden p-2 rounded-md text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors"><CloseIcon className="w-4 sm:w-5 h-4 sm:h-5" /></button>
+        </div>
+        <div className="p-3 sm:p-4 flex-shrink-0">
+          <button onClick={handleCreateNote} className="w-full flex items-center justify-center gap-2 py-1 sm:py-2 px-2 sm:px-3 bg-[var(--color-brand)] text-white rounded-md hover:opacity-90 transition-colors font-semibold text-xs sm:text-sm"><PlusIcon className="w-4 h-4" /> New Note</button>
+        </div>
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+            <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-2 pl-10 text-xs sm:text-sm bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none transition-colors" />
+          </div>
+        </div>
+        <nav className="flex-grow overflow-y-auto p-3 sm:p-4 space-y-2">
           {filteredNotes.length > 0 ? (
             filteredNotes.map(note => (
-              <div key={note.id} className={`flex items-center rounded-md transition-colors duration-150 ${activeNote?.id === note.id ? 'bg-[var(--color-brand)]' : 'hover:bg-[var(--color-bg-subtle-hover)]'}`}>
-                <a
-                  onClick={() => { setActiveNote(note); setSidebarOpen(false); setPreviewMode(false); }}
-                  className={`flex-grow p-3 rounded-l-md cursor-pointer ${activeNote?.id === note.id ? 'text-white' : ''}`}
-                >
+              <div key={note.id} className={`flex items-center rounded-md transition-colors duration-150 ${activeNote?.id === note.id ? 'bg-[var(--color-brand)] text-white' : 'hover:bg-[var(--color-bg-subtle-hover)]'}`}>
+                <a onClick={() => { setActiveNote(note); setSidebarOpen(false); setPreviewMode(false); }} className={`flex-grow p-2 sm:p-3 rounded-l-md cursor-pointer ${activeNote?.id === note.id ? 'text-white' : ''}`}>
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium text-sm truncate">{note.title || 'Untitled'}</h3>
-                    {note.subject && (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${activeNote?.id === note.id ? 'bg-white/20 text-white' : 'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]'}`}>
-                        {note.subject}
-                      </span>
-                    )}
+                    <h3 className="font-medium text-xs sm:text-sm truncate">{note.title || 'Untitled'}</h3>
+                    {note.subject && (<span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${activeNote?.id === note.id ? 'bg-white/20' : 'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]'}`}>{note.subject}</span>)}
                   </div>
                   <p className={`text-xs mt-1 ${activeNote?.id === note.id ? 'text-blue-100' : 'text-[var(--color-text-secondary)]'}`}>
-                    Last active: {new Date(note.updated_at || note.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                    Last active: {new Date(note.updated_at || note.created_at).toLocaleDateString()}
                   </p>
                 </a>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openDeleteModal(note.id); }}
-                  className={`flex-shrink-0 self-stretch px-3 rounded-r-md transition-colors duration-150 ${activeNote?.id === note.id ? 'hover:bg-white/20' : 'hover:bg-[var(--color-destructive-hover)]'}`}
-                  aria-label="Delete note"
-                >
-                  <TrashIcon className={`w-4 h-4 ${activeNote?.id === note.id ? 'text-white' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-destructive)]'}`} />
+                <button onClick={(e) => { e.stopPropagation(); setNoteToDelete(note.id); setShowDeleteModal(true); }} className={`flex-shrink-0 self-stretch px-2 sm:px-3 rounded-r-md transition-colors duration-150 ${activeNote?.id === note.id ? 'hover:bg-white/20' : 'hover:bg-red-500/20'}`} aria-label="Delete note">
+                  <TrashIcon className={`w-4 h-4 ${activeNote?.id === note.id ? 'text-white' : 'text-[var(--color-text-secondary)] hover:text-red-500'}`} />
                 </button>
               </div>
             ))
           ) : (
-            <div className="text-center py-10 text-[var(--color-text-secondary)] text-sm"><FileTextIcon className="w-10 h-10 mx-auto opacity-50 mb-2" /> No notes found.</div>
+            <div className="text-center py-8 sm:py-10 text-[var(--color-text-secondary)] text-xs sm:text-sm"><FileTextIcon className="w-8 sm:w-10 h-8 sm:h-10 mx-auto opacity-50 mb-2" /> No notes found.</div>
           )}
         </nav>
-        <div className="p-4 flex-shrink-0 border-t border-[var(--color-border)] flex items-center justify-between gap-4">
-          <Link href="/profile" className="flex items-center gap-3 group p-1 rounded-md">
-            <img src={avatarSrc} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-[var(--color-border)] group-hover:border-[var(--color-brand)] transition-colors" />
-            <div><span className="font-semibold text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-brand)] transition-colors">{profile?.full_name || profile?.username || 'User'}</span></div>
+        <div className="p-3 sm:p-4 flex-shrink-0 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+          <Link href="/profile" className="flex-1 flex items-center gap-2 sm:gap-3 group p-1 rounded-md min-w-0">
+            <img src={avatarSrc} alt="Profile" className="w-6 sm:w-8 h-6 sm:h-8 rounded-full object-cover border-2 border-[var(--color-border)] group-hover:border-[var(--color-brand)] transition-colors flex-shrink-0" />
+            <div className="truncate"><span className="font-semibold text-xs sm:text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-brand)] transition-colors truncate">{profile?.full_name || profile?.username || 'User'}</span></div>
           </Link>
-          <button
-            onClick={toggleTheme}
-            role="switch"
-            aria-checked={theme === 'dark'}
-            className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
-          >
-            <span className="sr-only">Toggle theme</span>
-            <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
-            >
-              {theme === 'dark' ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />}
-            </span>
+          <button onClick={() => setShowSettingsModal(true)} aria-label="Open settings" className="p-2 rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors">
+            <CogIcon className="w-4 sm:w-5 h-4 sm:h-5" />
           </button>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col relative z-10">
-        <header className="flex-shrink-0 p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          <button onClick={toggleSidebar} className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors lg:hidden"><MenuIcon className="w-5 h-5" /></button>
-          <div className="flex items-center justify-center gap-1">
+        <header className="flex-shrink-0 p-3 sm:p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+          <button onClick={toggleSidebar} className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors lg:hidden"><MenuIcon className="w-4 sm:w-5 h-4 sm:h-5" /></button>
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
             {activeNote && (
-              <div className="flex items-center p-0.5 bg-[var(--color-bg-subtle)] rounded-lg">
-                <button onClick={() => setPreviewMode(false)} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${!previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Write</button>
-                <button onClick={() => setPreviewMode(true)} className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Preview</button>
-              </div>
+              <>
+                <div className="flex items-center p-0.5 bg-[var(--color-bg-subtle)] rounded-lg">
+                  <button onClick={() => setPreviewMode(false)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${!previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Write</button>
+                  <button onClick={() => setPreviewMode(true)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Preview</button>
+                </div>
+                <button
+  onClick={async () => {
+    try {
+      if (!activeNote || !activeNote.id) {
+        setToastMessage('Error: No note selected.');
+        return;
+      }
+      if (!profile || (!profile.username && !profile.full_name)) {
+        setToastMessage('Error: Profile information missing.');
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setToastMessage('Error: User not authenticated.');
+        return;
+      }
+      const owner_username = profile.username || profile.full_name || 'Anonymous';
+      const sharedNote = {
+        note_id: parseInt(activeNote.id), // Store notes.id as note_id
+        title: activeNote.title || 'Untitled',
+        content: activeNote.content || '',
+        owner_username,
+        created_at: activeNote.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: user.id,
+      };
+      const { data, error } = await supabase
+        .from('shared_notes')
+        .upsert(sharedNote, { onConflict: ['note_id'] })
+        .select('id')
+        .single();
+      if (error) {
+        console.error('Supabase error:', error.message, error.details, error.hint);
+        setToastMessage(`Error sharing note: ${error.message}`);
+        return;
+      }
+      const url = `${window.location.origin}/share?id=${data.id}`; // Use shared_notes.id (UUID)
+      console.log('Generated share URL:', url);
+      await navigator.clipboard.writeText(url);
+      setToastMessage('Share link copied!');
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setToastMessage('Unexpected error sharing note.');
+    }
+  }}
+  className="ml-1 sm:ml-2 px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
+  title="Copy shareable link to clipboard"
+>
+  Share Note
+</button>
+              </>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -372,91 +503,31 @@ export default function NotesPage() {
         </header>
         <div className="flex-grow overflow-y-auto">
           {activeNote ? (
-            <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
-              <input
-                type="text"
-                value={activeNote.title}
-                onChange={(e) => handleUpdateNote('title', e.target.value)}
-                className="text-2xl sm:text-3xl font-bold bg-transparent w-full focus:outline-none placeholder:text-[var(--color-text-placeholder)] mb-4"
-                placeholder="Note Title"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <input
-                  type="text"
-                  value={activeNote.subject || ''}
-                  onChange={(e) => handleUpdateNote('subject', e.target.value)}
-                  placeholder="Subject (e.g., Work, Personal)"
-                  className="w-full p-2 text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none"
-                />
-                <input
-                  type="text"
-                  value={activeNote.tags?.join(', ') || ''}
-                  onChange={(e) => handleUpdateNote('tags', e.target.value)}
-                  placeholder="Add tags, comma-separated..."
-                  className="w-full p-2 text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none"
-                />
+            <div className="max-w-3xl sm:max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
+              <input type="text" value={activeNote.title} onChange={(e) => handleUpdateNote('title', e.target.value)} className="text-xl sm:text-2xl md:text-3xl font-bold bg-transparent w-full focus:outline-none placeholder:text-[var(--color-text-secondary)] mb-3 sm:mb-4" placeholder="Note Title" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <input type="text" value={activeNote.subject || ''} onChange={(e) => handleUpdateNote('subject', e.target.value)} placeholder="Subject (e.g., Work, Personal)" className="w-full p-2 text-xs sm:text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none" />
+                <input type="text" value={activeNote.tags?.join(', ') || ''} onChange={(e) => handleUpdateNote('tags', e.target.value)} placeholder="Add tags, comma-separated..." className="w-full p-2 text-xs sm:text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none" />
               </div>
               {previewMode ? (
-                <article className="prose prose-lg prose-p:my-2 prose-headings:my-4 prose-li:my-0 max-w-none prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
+                <article className="prose prose-sm sm:prose-lg prose-p:my-2 prose-headings:my-3 sm:prose-headings:my-4 prose-li:my-0 max-w-none prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeNote.content || '*Nothing to preview...*'}</ReactMarkdown>
                 </article>
               ) : (
-                <textarea
-                  value={activeNote.content}
-                  onChange={(e) => handleUpdateNote('content', e.target.value)}
-                  className="w-full mt-2 min-h-[50vh] bg-transparent text-base focus:outline-none placeholder:text-[var(--color-text-placeholder)] leading-relaxed resize-none font-mono"
-                  placeholder="Start writing..."
-                  onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
-                />
+                <textarea value={activeNote.content} onChange={(e) => handleUpdateNote('content', e.target.value)} className="w-full mt-2 min-h-[50vh] bg-transparent text-xs sm:text-base focus:outline-none placeholder:text-[var(--color-text-secondary)] leading-relaxed resize-none font-mono" placeholder="Start writing..." onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} />
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-secondary)] p-8 gap-4">
-              <FileTextIcon className="w-16 h-16 mb-2 opacity-50" />
-              <h2 className="text-lg sm:text-xl font-semibold text-[var(--color-text-primary)]">{notes.length > 0 ? 'Select a Note' : 'Welcome to Noteify'}</h2>
-              <p className="max-w-xs text-sm sm:text-base">{notes.length > 0 ? 'Choose a note to view or edit.' : 'Create your first note to get started.'}</p>
+            <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-secondary)] p-6 sm:p-8 gap-3 sm:gap-4">
+              <FileTextIcon className="w-12 sm:w-16 h-12 sm:h-16 mb-2 opacity-50" />
+              <h2 className="text-base sm:text-xl font-semibold text-[var(--color-text-primary)]">{notes.length > 0 ? 'Select a Note' : 'Welcome to Noteify'}</h2>
+              <p className="max-w-xs text-xs sm:text-base">{notes.length > 0 ? 'Choose a note to view or edit.' : 'Create your first note to get started.'}</p>
             </div>
           )}
         </div>
       </main>
 
       <style jsx global>{`
-        :root {
-          --color-background: #f9fafb;
-          --color-bg-sidebar: rgba(249, 250, 251, 0.8);
-          --color-bg-subtle: #f3f4f6;
-          --color-bg-subtle-hover: #e5e7eb;
-          --color-text-primary: #171717;
-          --color-text-secondary: #6b7280;
-          --color-text-placeholder: #a1a1aa;
-          --color-border: #e5e7eb;
-          --color-brand: #3b82f6;
-          --color-brand-hover: #2563eb;
-          --color-destructive: #ef4444;
-          --color-destructive-hover: rgba(239, 68, 68, 0.1);
-          --color-switch-track: #fcd34d;
-          --color-switch-icon: #f59e0b;
-          transition: all 0.3s ease;
-        }
-
-        .dark {
-          --color-background: #0a0a0a;
-          --color-bg-sidebar: rgba(10, 10, 10, 0.8);
-          --color-bg-subtle: #171717;
-          --color-bg-subtle-hover: #262626;
-          --color-text-primary: #f5f5f5;
-          --color-text-secondary: #a3a3a3;
-          --color-text-placeholder: #525252;
-          --color-border: #262626;
-          --color-brand: #3b82f6;
-          --color-brand-hover: #60a5fa;
-          --color-destructive: #ef4444;
-          --color-destructive-hover: rgba(239, 68, 68, 0.2);
-          --color-switch-track: #4f46e5;
-          --color-switch-icon: #c7d2fe;
-          transition: all 0.3s ease;
-        }
-
         .dark .prose-headings, .dark .prose-p, .dark .prose-strong, .dark .prose-li, .dark .prose-code { color: var(--color-text-primary); }
         .dark .prose-blockquote { color: var(--color-text-secondary); }
         .dark .prose-a { color: var(--color-brand); }

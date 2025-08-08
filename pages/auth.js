@@ -138,8 +138,8 @@ export default function AuthPage() {
         if (error) throw error;
         console.log('Session:', session);
         if (session) {
-          console.log('Redirecting to /');
-          window.location.href = '/';
+          console.log('Redirecting to /notes');
+          window.location.href = '/notes';
         } else {
           console.log('No session, showing auth form');
           setInitialLoading(false);
@@ -176,11 +176,17 @@ export default function AuthPage() {
           }
         });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        // Try to sign in immediately after sign up (if email confirmation is not required)
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          alert('Check your email for the confirmation link!');
+        } else {
+          window.location.href = '/notes';
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        window.location.href = '/';
+        window.location.href = '/notes';
       }
     } catch (error) {
       console.error('Auth error:', error.message);

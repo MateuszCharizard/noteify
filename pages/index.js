@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
 import confetti from 'canvas-confetti';
 import * as THREE from 'three';
-import { createClient } from '@supabase/supabase-js';
-
 // Stand-in for Next.js components
-const Head = ({ children }) => {
+const Head = ({ children }) => {  
   useEffect(() => {
     const childrenArray = React.Children.toArray(children);
     const title = childrenArray.find(c => c.type === 'title')?.props.children;
@@ -14,11 +13,6 @@ const Head = ({ children }) => {
   return null;
 };
 const Link = ({ href, children, ...props }) => <a href={href} {...props}>{children}</a>;
-
-// Initialize Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- SVG ICONS ---
 const LogoIcon = (props) => (
@@ -30,26 +24,81 @@ const LogoIcon = (props) => (
 );
 const SunIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>;
 const MoonIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>;
+const CogIcon = (props) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>);
 const BrainIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a4.5 4.5 0 0 0-4.5 4.5c0 1.54.83 2.9 2.06 3.73a4.5 4.5 0 0 0-1.8 3.53v.5a2.5 2.5 0 0 0 2.5 2.5h3.5a2.5 2.5 0 0 0 2.5-2.5v-.5a4.5 4.5 0 0 0-1.8-3.53c1.23-.83 2.06-2.19 2.06-3.73A4.5 4.5 0 0 0 12 2Z"/><path d="M12 16.5V22"/><path d="M12 2v.5"/><path d="M16.5 6.5a4.5 4.5 0 0 0-4.26-4.49"/><path d="M7.5 6.5a4.5 4.5 0 0 1 4.26-4.49"/></svg>;
 const CloudIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10Z"/></svg>;
 const FilesIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M16 11h.01"/></svg>;
 
-export default function Landing({ session }) {
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const themes = [
+  { id: 'light', name: 'Light', vars: { '--color-background': '#f9fafb', '--color-bg-subtle': '#f3f4f6', '--color-bg-subtle-hover': '#e5e7eb', '--color-text-primary': '#171717', '--color-text-secondary': '#6b7280', '--color-border': '#e5e7eb', '--color-brand': '#3b82f6' } },
+  { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3a3', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
+  { id: 'sunset', name: 'Sunset', vars: { '--color-background': '#0f172a', '--color-bg-subtle': '#1e293b', '--color-bg-subtle-hover': '#334155', '--color-text-primary': '#fff8f1', '--color-text-secondary': '#ffd7b3', '--color-border': '#fb923c', '--color-brand': '#fb923c' } },
+  { id: 'forest', name: 'Forest', vars: { '--color-background': '#1a201c', '--color-bg-subtle': '#2d3831', '--color-bg-subtle-hover': '#3a4a40', '--color-text-primary': '#eaffea', '--color-text-secondary': '#b6e7b6', '--color-border': '#66bb6a', '--color-brand': '#66bb6a' } },
+];
+
+export default function Landing() {
+
   const router = useRouter();
   const [theme, setTheme] = useState('light');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [animatedBg, setAnimatedBg] = useState(true);
+  const [starCount, setStarCount] = useState(500);
+  const [starSpeed, setStarSpeed] = useState(0.0002);
   const backgroundRef = useRef(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  // Load user settings from Supabase on mount
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: settings } = await supabase.from('user_settings').select('*').eq('id', user.id).single();
+        if (settings) {
+          setTheme(settings.theme || 'light');
+          setAnimatedBg(settings.animated_bg ?? true);
+          setStarCount(settings.star_count ?? 500);
+          setStarSpeed(settings.star_speed ?? 0.0002);
+        }
+      }
+    })();
+  }, []);
+
+  // Save user settings to Supabase when changed
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('user_settings').upsert({
+          id: user.id,
+          theme,
+          animated_bg: animatedBg,
+          star_count: starCount,
+          star_speed: starSpeed,
+          updated_at: new Date().toISOString()
+        });
+      }
+    })();
+  }, [theme, animatedBg, starCount, starSpeed]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
+    const savedAnimatedBg = localStorage.getItem('animatedBg');
+    const savedStarCount = localStorage.getItem('starCount');
+    const savedStarSpeed = localStorage.getItem('starSpeed');
     const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
     setTheme(initialTheme);
+    setAnimatedBg(savedAnimatedBg === null ? true : savedAnimatedBg === 'true');
+    setStarCount(savedStarCount ? Number(savedStarCount) : 500);
+    setStarSpeed(savedStarSpeed ? Number(savedStarSpeed) : 0.0002);
   }, []);
 
   useEffect(() => {
+    const selectedTheme = themes.find(t => t.id === theme) || themes[0];
+    document.documentElement.setAttribute('data-theme', selectedTheme.id);
+    Object.entries(selectedTheme.vars).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -59,38 +108,13 @@ export default function Landing({ session }) {
   }, [theme]);
 
   useEffect(() => {
-    if (!session) {
-      router.push('/auth');
-      return;
-    }
-
-    const fetchProfileForLanding = async () => {
-      try {
-        setLoading(true);
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('avatar_url, username')
-          .eq('id', session.user.id)
-          .single();
-        if (error) throw error;
-        
-        setProfile(profileData);
-
-        if (profileData?.avatar_url) {
-          setAvatarUrl(profileData.avatar_url);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfileForLanding();
-  }, [session, router]);
+    localStorage.setItem('animatedBg', animatedBg);
+    localStorage.setItem('starCount', starCount);
+    localStorage.setItem('starSpeed', starSpeed);
+  }, [animatedBg, starCount, starSpeed]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !backgroundRef.current || !session) return;
+    if (typeof window === 'undefined' || !backgroundRef.current) return;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -141,7 +165,7 @@ export default function Landing({ session }) {
       cancelAnimationFrame(animationFrameId);
       renderer.dispose();
     };
-  }, [theme, session]);
+  }, [theme]);
 
   const handleLogoClick = () => {
     confetti({
@@ -150,15 +174,7 @@ export default function Landing({ session }) {
     });
   };
 
-  const toggleTheme = () => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
 
-  if (!session || loading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-text-primary)]"></div>
-      </div>
-    );
-  }
 
   const features = [
     { icon: <BrainIcon />, title: "AI Insights", description: "Get smart summaries and suggestions from your notes instantly." },
@@ -166,133 +182,207 @@ export default function Landing({ session }) {
     { icon: <CloudIcon />, title: "Cross-Device Sync", description: "Access your notes seamlessly and securely on any device." },
   ];
 
-  const finalAvatarUrl = avatarUrl || `https://avatar.vercel.sh/${profile?.username || 'A'}.png?size=40`;
-
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-500 flex flex-col items-center relative overflow-hidden select-none">
       <Head>
         <title>Noteify - Your Smart Note-Taking App</title>
       </Head>
 
-      <div id="background" ref={backgroundRef} className="fixed inset-0 z-0"></div>
+      <div ref={backgroundRef} className="fixed inset-0 -z-10" />
 
-      <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center z-20">
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex justify-between items-center z-20">
         <div
           className="flex items-center gap-3 cursor-pointer text-[var(--color-text-primary)]"
           onClick={handleLogoClick}
           title="Click for a surprise!"
         >
-          <LogoIcon className="w-8 h-8" />
-          <span className="font-semibold text-xl">Noteify</span>
+          <LogoIcon className="w-10 h-10" />
+          <span className="font-semibold text-2xl tracking-tight">Noteify</span>
         </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={toggleTheme}
-            role="switch"
-            aria-checked={theme === 'dark'}
-            className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
+        <button
+          onClick={() => setShowSettingsModal(true)}
+          aria-label="Open settings"
+          className="p-2 rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)]"
+        >
+          <CogIcon className="w-7 h-7" />
+        </button>
+      </header>
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
+          <div
+            role="dialog"
+            className={`relative z-10 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl ${theme === 'dark' ? 'bg-[#1e293b]/90' : 'bg-white/95'}`}
+            style={{boxShadow:'0 8px 32px 0 rgba(31,38,135,0.25)', color: theme === 'dark' ? '#fff' : '#111'}}
           >
-            <span className="sr-only">Toggle theme</span>
-            <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
-                theme === 'dark' ? 'translate-x-6' : 'translate-x-0'
-              }`}
-            >
-              {theme === 'dark' ? (
-                <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />
-              ) : (
-                <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />
-              )}
-            </span>
-          </button>
-          <Link href="/profile" className="w-10 h-10 rounded-full transition-transform hover:scale-110">
-            <div className={`w-full h-full rounded-full ${!avatarUrl ? 'bg-[var(--color-bg-subtle)] animate-pulse' : ''}`}>
-              <img
-                src={finalAvatarUrl}
-                alt="Profile"
-                className="w-full h-full object-cover rounded-full border-2 border-transparent"
-              />
+            <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
+              <span className="text-lg font-semibold">Personalisation</span>
             </div>
-          </Link>
-        </div>
-      </nav>
-
-      <main className="text-center relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-128px)] px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl animate-fade-in-up">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 text-[var(--color-text-primary)]">
-            Your second brain,
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-400">
-              reimagined.
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl max-w-xl mx-auto mb-8 text-[var(--color-text-secondary)]">
-            Noteify transforms your ideas into organized, AI-powered notes. Clarity starts here.
-          </p>
-          <a
-            href="/notes"
-            className="inline-block px-8 py-3 bg-[var(--color-brand)] text-white rounded-lg font-semibold transition-all duration-300 hover:bg-[var(--color-brand-hover)] hover:scale-105 shadow-lg hover:shadow-xl"
-          >
-            Enter Your Workspace
-          </a>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24">
-          {features.map((feature, i) => (
-            <div
-              key={feature.title}
-              className="p-6 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-sm rounded-xl border border-[var(--color-border)] animate-fade-in-up transition-transform hover:-translate-y-2 feature-card"
-              style={{ animationDelay: `${0.2 * (i + 1)}s` }}
-            >
-              <div className="flex items-center justify-center w-12 h-12 bg-[var(--color-brand-muted)] rounded-lg mb-4 text-[var(--color-brand)]">
-                {feature.icon}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-10">
+                <div>
+                  <h3 className="font-semibold text-base mb-4 tracking-wide">Color Theme</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {themes.map(t => {
+                      // Use a darker preview for sunset/forest theme cards in the settings modal
+                      const isDarkPreview = ['sunset','forest'].includes(t.id);
+                      return (
+                        <div key={t.id} className="flex flex-col items-center">
+                          <button
+                            onClick={() => setTheme(t.id)}
+                            className={`w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center shadow-md ${theme === t.id ? 'border-[var(--color-brand)] scale-105 ring-2 ring-[var(--color-brand)]' : 'border-[var(--color-border)] hover:scale-105'}`}
+                            style={{
+                              background: isDarkPreview ? 'rgba(30,41,59,0.85)' : t.vars['--color-background'],
+                              color: theme === 'dark' ? '#fff' : '#111'
+                            }}
+                          >
+                            <span className="block w-7 h-7 sm:w-10 sm:h-10 rounded-full" style={{ background: t.vars['--color-brand'] }}></span>
+                          </button>
+                          <p className="text-center text-xs sm:text-sm mt-2 font-medium opacity-80" style={{color: theme === 'dark' ? '#fff' : '#111'}}>{t.name}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="border-t border-[var(--color-border)] pt-8">
+                  <h3 className="font-semibold text-base mb-4 tracking-wide">Animated Background</h3>
+                  <div className={`flex items-center justify-between p-4 rounded-2xl shadow-sm ${theme === 'dark' ? 'bg-[#334155]/80' : 'bg-white/80'}` }>
+                    <label htmlFor="bg-toggle" className="font-medium text-sm">Enable Animation</label>
+                    <button onClick={() => setAnimatedBg(!animatedBg)} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}> 
+                      <span className={`block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform duration-200 ${animatedBg ? 'translate-x-7' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                  <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}> 
+                    <div>
+                      <label htmlFor="star-count" className="text-sm flex justify-between font-medium"><span>Star Count</span><span>{starCount}</span></label>
+                      <input id="star-count" type="range" min="100" max="2000" step="100" value={starCount} onChange={(e) => setStarCount(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
+                    </div>
+                    <div>
+                      <label htmlFor="star-speed" className="text-sm flex justify-between font-medium"><span>Animation Speed</span><span>{(starSpeed * 10000).toFixed(1)}</span></label>
+                      <input id="star-speed" type="range" min="0.0001" max="0.001" step="0.0001" value={starSpeed} onChange={(e) => setStarSpeed(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
+                    </div>
+                  </fieldset>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2 text-[var(--color-text-primary)]">{feature.title}</h3>
-              <p className="text-sm sm:text-base text-[var(--color-text-secondary)]">{feature.description}</p>
             </div>
-          ))}
+            <div className="p-4 border-t border-[var(--color-border)] flex-shrink-0 flex justify-end items-center gap-4">
+              <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
+            </div>
+          </div>
         </div>
+      )}
+
+      <main className="text-center relative z-10 flex flex-col items-center justify-center min-h-[60vh] px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl animate-fade-in-up">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold mb-6 text-[var(--color-text-primary)] leading-tight">
+            Your second brain for the AI era
+          </h1>
+          <p className="text-lg sm:text-xl md:text-2xl max-w-xl mx-auto mb-10 text-[var(--color-text-secondary)]">
+            Effortlessly capture, organize, and rediscover your ideas. Noteify brings clarity and creativity together with a beautiful, AI-powered workspace.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-16 sm:mt-20 md:mt-24">
+          {features.map((feature, i) => {
+            const isDark = ['sunset','forest','dark'].includes(theme);
+            const textPrimary = isDark ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)]';
+            const textSecondary = isDark ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-secondary)]';
+            return (
+              <div
+                key={feature.title}
+                className={`p-8 rounded-2xl border border-[var(--color-border)] animate-fade-in-up transition-transform hover:-translate-y-2 feature-card shadow-lg ${textPrimary}`}
+                style={{
+                  animationDelay: `${0.2 * (i + 1)}s`,
+                  background: isDark
+                    ? 'rgba(30, 41, 59, 0.85)'
+                    : 'rgba(243, 244, 246, 0.7)'
+                }}
+              >
+                <div className="flex items-center justify-center w-14 h-14 bg-[var(--color-brand-muted)] rounded-lg mb-5 text-[var(--color-brand)]">
+                  {feature.icon}
+                </div>
+                <h3 className={`text-xl font-semibold mb-2 ${textPrimary}`}>{feature.title}</h3>
+                <p className={`text-base ${textSecondary}`}>{feature.description}</p>
+              </div>
+            );
+          })}
+        </div>
+          <div className="max-w-4xl mx-auto mt-20 mb-8 animate-fade-in-up">
+            <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
+              <div
+                className={`rounded-2xl shadow-lg border border-[var(--color-border)] p-6 flex-1 min-w-[260px] text-[var(--color-text-primary)]`}
+                style={{
+                  background: ['sunset','forest','dark'].includes(theme)
+                    ? 'rgba(30, 41, 59, 0.85)'
+                    : 'rgba(255,255,255,0.8)'
+                }}
+              >
+                <p className={`text-lg font-medium mb-3 text-[var(--color-text-primary)]`}>“Noteify is the first note app that feels truly smart and delightful to use.”</p>
+                <div className="flex items-center gap-3">
+                  <img src="/file.svg" alt="User" className="w-10 h-10 rounded-full bg-[var(--color-bg-subtle)]" />
+                  <span className={`font-semibold text-[var(--color-text-primary)]`}>Alex P.</span>
+                  <span className={`text-xs text-[var(--color-text-secondary)]`}>Product Designer</span>
+                </div>
+              </div>
+              <div
+                className={`rounded-2xl shadow-lg border border-[var(--color-border)] p-6 flex-1 min-w-[260px] text-[var(--color-text-primary)]`}
+                style={{
+                  background: ['sunset','forest','dark'].includes(theme)
+                    ? 'rgba(30, 41, 59, 0.85)'
+                    : 'rgba(255,255,255,0.8)'
+                }}
+              >
+                <p className={`text-lg font-medium mb-3 text-[var(--color-text-primary)]`}>“The AI features are a game changer. I never lose track of my ideas now.”</p>
+                <div className="flex items-center gap-3">
+                  <img src="/globe.svg" alt="User" className="w-10 h-10 rounded-full bg-[var(--color-bg-subtle)]" />
+                  <span className={`font-semibold text-[var(--color-text-primary)]`}>Jamie L.</span>
+                  <span className={`text-xs text-[var(--color-text-secondary)]`}>Startup Founder</span>
+                </div>
+              </div>
+            </div>
+          </div>
       </main>
 
-      <footer className="w-full text-center p-4 sm:p-6 text-sm text-[var(--color-text-secondary)] z-10 mt-auto">
+      <footer className="w-full text-center p-6 text-base text-[var(--color-text-secondary)] z-10 mt-auto">
         © {new Date().getFullYear()} Noteify. All rights reserved.
       </footer>
 
       <style jsx global>{`
         :root {
-          --color-background: #ffffff;
+          --color-background: #f8fafc;
           --color-bg-subtle: #f3f4f6;
           --color-bg-subtle-hover: #e5e7eb;
-          --color-bg-subtle-translucent: rgba(243, 244, 246, 0.8);
-          --color-text-primary: #111827;
-          --color-text-secondary: #4b5563;
+          --color-bg-subtle-translucent: rgba(243, 244, 246, 0.85);
+          --color-text-primary: #0f172a;
+          --color-text-secondary: #64748b;
           --color-border: #e5e7eb;
           --color-brand: #3b82f6;
           --color-brand-hover: #2563eb;
           --color-brand-muted: #dbeafe;
           --color-switch-track: #fcd34d;
           --color-switch-icon: #f59e0b;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
         }
 
         .dark {
-          --color-background: #000000;
-          --color-bg-subtle: #1f2937;
-          --color-bg-subtle-hover: #374151;
-          --color-bg-subtle-translucent: rgba(31, 41, 55, 0.8);
-          --color-text-primary: #f9fafb;
-          --color-text-secondary: #9ca3af;
-          --color-border: #374151;
+          --color-background: #0a0a0a;
+          --color-bg-subtle: #1e293b;
+          --color-bg-subtle-hover: #334155;
+          --color-bg-subtle-translucent: rgba(30, 41, 59, 0.85);
+          --color-text-primary: #f1f5f9;
+          --color-text-secondary: #94a3b8;
+          --color-border: #334155;
           --color-brand: #60a5fa;
           --color-brand-hover: #3b82f6;
           --color-brand-muted: rgba(59, 130, 246, 0.2);
           --color-switch-track: #4f46e5;
           --color-switch-icon: #c7d2fe;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
         }
 
         .feature-card {
-          min-height: 200px;
+          min-height: 220px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
