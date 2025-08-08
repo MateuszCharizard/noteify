@@ -48,19 +48,25 @@ export default function SharePage() {
   // Toast message
   const [toastMessage, setToastMessage] = useState('');
 
-  // Theme logic
+  // Load theme from Supabase or localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    // Listen for theme changes from other tabs/pages
-    const onStorage = (e) => {
-      if (e.key === 'theme' && e.newValue) setTheme(e.newValue);
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      let loadedTheme = 'light';
+      if (user) {
+        const { data: settings } = await supabase.from('user_settings').select('theme').eq('id', user.id).single();
+        if (settings && settings.theme) {
+          loadedTheme = settings.theme;
+        }
+      } else {
+        const savedTheme = localStorage.getItem('theme');
+        loadedTheme = savedTheme || 'light';
+      }
+      setTheme(loadedTheme);
+      localStorage.setItem('theme', loadedTheme);
+    })();
   }, []);
+
   useEffect(() => {
     const selectedTheme = themes.find(t => t.id === theme) || themes[0];
     document.documentElement.setAttribute('data-theme', selectedTheme.id);
@@ -141,7 +147,15 @@ export default function SharePage() {
     if (settings.theme) {
       setTheme(settings.theme);
       localStorage.setItem('theme', settings.theme);
-      window.dispatchEvent(new StorageEvent('storage', { key: 'theme', newValue: settings.theme }));
+      // Save to Supabase if logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('user_settings').upsert({
+          id: user.id,
+          theme: settings.theme,
+          updated_at: new Date().toISOString()
+        });
+      }
     }
     if (settings.animated_bg !== undefined) {
       setAnimatedBg(settings.animated_bg);
@@ -156,24 +170,7 @@ export default function SharePage() {
       localStorage.setItem('starSpeed', settings.star_speed);
     }
     if (settings.avatar_url && profile) setProfile(p => ({...p, avatar_url: settings.avatar_url}));
-    // Save to user_settings table if logged in
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Upsert settings for this user
-        await supabase.from('user_settings').upsert({
-          id: user.id,
-          theme: settings.theme ?? theme,
-          animated_bg: settings.animated_bg ?? animatedBg,
-          star_count: settings.star_count ?? starCount,
-          star_speed: settings.star_speed ?? starSpeed,
-          updated_at: new Date().toISOString()
-        });
-        setToastMessage('Settings saved!');
-      }
-    } catch (e) {
-      setToastMessage('Error saving settings.');
-    }
+    setToastMessage('Settings saved!');
   };
   // Fetch user settings on mount if logged in
   useEffect(() => {

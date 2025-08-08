@@ -23,6 +23,7 @@ const MenuIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke
 const CloseIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
 const CogIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>);
 const LogOutIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>);
+const ExploreIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>);
 
 // --- Theme Definitions ---
 const themes = [
@@ -35,6 +36,8 @@ const themes = [
 export default function NotesPage() {
   // --- State Definitions ---
   const [theme, setTheme] = useState('dark');
+  // Track if theme is loaded from Supabase
+  const [themeLoaded, setThemeLoaded] = useState(false);
   const [animatedBg, setAnimatedBg] = useState(true);
   const [starCount, setStarCount] = useState(500);
   const [starSpeed, setStarSpeed] = useState(0.0002);
@@ -52,19 +55,43 @@ export default function NotesPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('personalisation');
   const [accountForm, setAccountForm] = useState({ full_name: '', username: '' });
+  const [isPublic, setIsPublic] = useState(false);
 
   // --- Refs ---
   const backgroundRef = useRef(null);
   const debounceTimeout = useRef(null);
 
   // --- Effects ---
+  // Load theme from Supabase or localStorage on mount
   useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      let loadedTheme = 'dark';
+      if (user) {
+        const { data: settings } = await supabase.from('user_settings').select('theme').eq('id', user.id).single();
+        if (settings && settings.theme) {
+          loadedTheme = settings.theme;
+        }
+      } else {
+        const savedTheme = localStorage.getItem('theme');
+        loadedTheme = savedTheme || 'dark';
+      }
+      setTheme(loadedTheme);
+      setThemeLoaded(true);
+      localStorage.setItem('theme', loadedTheme);
+    })();
+  }, []);
+
+  // Apply theme vars when theme changes
+  useEffect(() => {
+    if (!themeLoaded) return;
     const selectedTheme = themes.find(t => t.id === theme) || themes[1];
     document.documentElement.setAttribute('data-theme', selectedTheme.id);
     Object.entries(selectedTheme.vars).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });
-  }, [theme]);
+    localStorage.setItem('theme', theme);
+  }, [theme, themeLoaded]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !backgroundRef.current || !animatedBg) {
@@ -144,6 +171,10 @@ export default function NotesPage() {
       setAccountForm({ full_name: profile.full_name || '', username: profile.username || '' });
     }
   }, [showSettingsModal, profile]);
+
+  useEffect(() => {
+    setIsPublic(false);
+  }, [activeNote]);
 
   // --- Data & Handler Functions ---
   const fetchData = async (user) => {
@@ -233,17 +264,43 @@ export default function NotesPage() {
   const handleSettingsUpdate = async (settings) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (settings.theme) setTheme(settings.theme);
+
+    // Handle theme update
+    if (settings.theme) {
+      setTheme(settings.theme);
+      localStorage.setItem('theme', settings.theme);
+      const { error } = await supabase.from('user_settings').upsert({ id: user.id, theme: settings.theme, updated_at: new Date().toISOString() });
+      if (error) {
+        setToastMessage('Error saving settings.');
+        console.error(error);
+        return;
+      } else {
+        setToastMessage('Settings saved!');
+      }
+    }
+
+    // Handle animated background settings
     if (settings.animated_bg !== undefined) setAnimatedBg(settings.animated_bg);
     if (settings.star_count) setStarCount(settings.star_count);
     if (settings.star_speed) setStarSpeed(settings.star_speed);
-    if (settings.avatar_url) setProfile(p => ({...p, avatar_url: settings.avatar_url}));
-    const { error } = await supabase.from('profiles').update(settings).eq('id', user.id);
-    if (error) {
-      setToastMessage('Error saving settings.');
-      console.error(error);
-    } else {
-      setToastMessage('Settings saved!');
+
+    // Handle avatar update (and other profile fields)
+    const profileFields = {};
+    if (settings.avatar_url) {
+      setProfile(p => ({...p, avatar_url: settings.avatar_url}));
+      profileFields.avatar_url = settings.avatar_url;
+    }
+    // Add more profile fields here if needed
+
+    // Only update profiles if there are valid fields
+    if (Object.keys(profileFields).length > 0) {
+      const { error } = await supabase.from('profiles').update(profileFields).eq('id', user.id);
+      if (error) {
+        setToastMessage('Error saving settings.');
+        console.error(error);
+      } else {
+        setToastMessage('Settings saved!');
+      }
     }
   };
 
@@ -335,11 +392,11 @@ export default function NotesPage() {
                     <h3 className="font-semibold text-base mb-4 tracking-wide">Animated Background</h3>
                     <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-[#334155]/60 rounded-2xl shadow-sm">
                       <label htmlFor="bg-toggle" className="font-medium text-sm">Enable Animation</label>
-                      <button onClick={() => handleSettingsUpdate({ animated_bg: !animatedBg })} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}> 
+                      <button onClick={() => handleSettingsUpdate({ animated_bg: !animatedBg })} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}>
                         <span className={`block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform duration-200 ${animatedBg ? 'translate-x-7' : 'translate-x-0'}`} />
                       </button>
                     </div>
-                    <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}> 
+                    <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}>
                       <div>
                         <label htmlFor="star-count" className="text-sm flex justify-between font-medium"><span>Star Count</span><span>{starCount}</span></label>
                         <input id="star-count" type="range" min="100" max="2000" step="100" value={starCount} onChange={(e) => setStarCount(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_count: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
@@ -402,6 +459,10 @@ export default function NotesPage() {
           </div>
         </div>
         <nav className="flex-grow overflow-y-auto p-3 sm:p-4 space-y-2">
+          <Link href="/explore" className="flex items-center gap-2 p-2 sm:p-3 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors">
+            <ExploreIcon className="w-4 sm:w-5 h-4 sm:h-5 text-[var(--color-text-primary)]" />
+            <span className="text-xs sm:text-sm font-semibold text-[var(--color-text-primary)]">Explore</span>
+          </Link>
           {filteredNotes.length > 0 ? (
             filteredNotes.map(note => (
               <div key={note.id} className={`flex items-center rounded-md transition-colors duration-150 ${activeNote?.id === note.id ? 'bg-[var(--color-brand)] text-white' : 'hover:bg-[var(--color-bg-subtle-hover)]'}`}>
@@ -444,56 +505,76 @@ export default function NotesPage() {
                   <button onClick={() => setPreviewMode(false)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${!previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Write</button>
                   <button onClick={() => setPreviewMode(true)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Preview</button>
                 </div>
-                <button
-  onClick={async () => {
-    try {
-      if (!activeNote || !activeNote.id) {
-        setToastMessage('Error: No note selected.');
-        return;
-      }
-      if (!profile || (!profile.username && !profile.full_name)) {
-        setToastMessage('Error: Profile information missing.');
-        return;
-      }
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setToastMessage('Error: User not authenticated.');
-        return;
-      }
-      const owner_username = profile.username || profile.full_name || 'Anonymous';
-      const sharedNote = {
-        note_id: parseInt(activeNote.id), // Store notes.id as note_id
-        title: activeNote.title || 'Untitled',
-        content: activeNote.content || '',
-        owner_username,
-        created_at: activeNote.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user_id: user.id,
-      };
-      const { data, error } = await supabase
-        .from('shared_notes')
-        .upsert(sharedNote, { onConflict: ['note_id'] })
-        .select('id')
-        .single();
-      if (error) {
-        console.error('Supabase error:', error.message, error.details, error.hint);
-        setToastMessage(`Error sharing note: ${error.message}`);
-        return;
-      }
-      const url = `${window.location.origin}/share?id=${data.id}`; // Use shared_notes.id (UUID)
-      console.log('Generated share URL:', url);
-      await navigator.clipboard.writeText(url);
-      setToastMessage('Share link copied!');
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      setToastMessage('Unexpected error sharing note.');
-    }
-  }}
-  className="ml-1 sm:ml-2 px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
-  title="Copy shareable link to clipboard"
->
-  Share Note
-</button>
+                <div className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-1 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="form-checkbox h-4 w-4 text-[var(--color-brand)]"
+                      aria-label="Make note public"
+                    />
+                    <span>Public</span>
+                  </label>
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (!activeNote || !activeNote.id) {
+                          setToastMessage('Error: No note selected.');
+                          return;
+                        }
+                        if (!profile || (!profile.username && !profile.full_name)) {
+                          setToastMessage('Error: Profile information missing.');
+                          return;
+                        }
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) {
+                          setToastMessage('Error: User not authenticated.');
+                          return;
+                        }
+                        const owner_username = profile.username || profile.full_name || 'Anonymous';
+                        const sharedNote = {
+                          note_id: parseInt(activeNote.id),
+                          title: activeNote.title || 'Untitled',
+                          content: activeNote.content || '',
+                          owner_username,
+                          created_at: activeNote.created_at || new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                          user_id: user.id,
+                          is_public: isPublic,
+                        };
+                        console.log('Attempting to upsert shared note:', sharedNote);
+                        const { data, error } = await supabase
+                          .from('shared_notes')
+                          .upsert(sharedNote, { onConflict: ['note_id'] })
+                          .select('id')
+                          .single();
+                        if (error) {
+                          console.error('Supabase upsert error:', {
+                            message: error.message,
+                            details: error.details,
+                            hint: error.hint,
+                            code: error.code
+                          });
+                          setToastMessage(`Error sharing note: ${error.message}`);
+                          return;
+                        }
+                        console.log('Upsert successful, shared note ID:', data.id);
+                        const url = `${window.location.origin}/share?id=${data.id}`; // Use shared_notes.id (UUID)
+                        console.log('Generated share URL:', url);
+                        await navigator.clipboard.writeText(url);
+                        setToastMessage('Share link copied!');
+                      } catch (err) {
+                        console.error('Unexpected error sharing note:', err);
+                        setToastMessage('Unexpected error sharing note.');
+                      }
+                    }}
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
+                    title="Copy shareable link to clipboard"
+                  >
+                    Share Note
+                  </button>
+                </div>
               </>
             )}
           </div>

@@ -41,34 +41,58 @@ export default function Landing() {
 
   const router = useRouter();
   const [theme, setTheme] = useState('light');
+  const [themeLoaded, setThemeLoaded] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [animatedBg, setAnimatedBg] = useState(true);
   const [starCount, setStarCount] = useState(500);
   const [starSpeed, setStarSpeed] = useState(0.0002);
   const backgroundRef = useRef(null);
 
-  // Load user settings from Supabase on mount
+  // Unified theme loading logic
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      let loadedTheme = 'light';
+      let loadedAnimatedBg = true;
+      let loadedStarCount = 500;
+      let loadedStarSpeed = 0.0002;
       if (user) {
-        const { data: settings } = await supabase.from('user_settings').select('*').eq('id', user.id).single();
+        const { data: settings } = await supabase.from('user_settings').select('theme,animated_bg,star_count,star_speed').eq('id', user.id).single();
         if (settings) {
-          setTheme(settings.theme || 'light');
-          setAnimatedBg(settings.animated_bg ?? true);
-          setStarCount(settings.star_count ?? 500);
-          setStarSpeed(settings.star_speed ?? 0.0002);
+          loadedTheme = settings.theme || 'light';
+          loadedAnimatedBg = settings.animated_bg ?? true;
+          loadedStarCount = settings.star_count ?? 500;
+          loadedStarSpeed = settings.star_speed ?? 0.0002;
         }
+      } else {
+        const savedTheme = localStorage.getItem('theme');
+        const savedAnimatedBg = localStorage.getItem('animatedBg');
+        const savedStarCount = localStorage.getItem('starCount');
+        const savedStarSpeed = localStorage.getItem('starSpeed');
+        loadedTheme = savedTheme || 'light';
+        loadedAnimatedBg = savedAnimatedBg === null ? true : savedAnimatedBg === 'true';
+        loadedStarCount = savedStarCount ? Number(savedStarCount) : 500;
+        loadedStarSpeed = savedStarSpeed ? Number(savedStarSpeed) : 0.0002;
       }
+      setTheme(loadedTheme);
+      setAnimatedBg(loadedAnimatedBg);
+      setStarCount(loadedStarCount);
+      setStarSpeed(loadedStarSpeed);
+      setThemeLoaded(true);
+      localStorage.setItem('theme', loadedTheme);
+      localStorage.setItem('animatedBg', loadedAnimatedBg);
+      localStorage.setItem('starCount', loadedStarCount);
+      localStorage.setItem('starSpeed', loadedStarSpeed);
     })();
   }, []);
 
-  // Save user settings to Supabase when changed
+  // Save theme to Supabase and localStorage when changed
   useEffect(() => {
+    if (!themeLoaded) return;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('user_settings').upsert({
+        const { error } = await supabase.from('user_settings').upsert({
           id: user.id,
           theme,
           animated_bg: animatedBg,
@@ -76,24 +100,20 @@ export default function Landing() {
           star_speed: starSpeed,
           updated_at: new Date().toISOString()
         });
+        if (error) {
+          alert('Error saving settings: ' + error.message);
+        }
       }
+      localStorage.setItem('theme', theme);
+      localStorage.setItem('animatedBg', animatedBg);
+      localStorage.setItem('starCount', starCount);
+      localStorage.setItem('starSpeed', starSpeed);
     })();
-  }, [theme, animatedBg, starCount, starSpeed]);
+  }, [theme, animatedBg, starCount, starSpeed, themeLoaded]);
 
+  // Apply theme vars when theme changes
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const savedAnimatedBg = localStorage.getItem('animatedBg');
-    const savedStarCount = localStorage.getItem('starCount');
-    const savedStarSpeed = localStorage.getItem('starSpeed');
-    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    setAnimatedBg(savedAnimatedBg === null ? true : savedAnimatedBg === 'true');
-    setStarCount(savedStarCount ? Number(savedStarCount) : 500);
-    setStarSpeed(savedStarSpeed ? Number(savedStarSpeed) : 0.0002);
-  }, []);
-
-  useEffect(() => {
+    if (!themeLoaded) return;
     const selectedTheme = themes.find(t => t.id === theme) || themes[0];
     document.documentElement.setAttribute('data-theme', selectedTheme.id);
     Object.entries(selectedTheme.vars).forEach(([key, value]) => {
@@ -104,8 +124,7 @@ export default function Landing() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, themeLoaded]);
 
   useEffect(() => {
     localStorage.setItem('animatedBg', animatedBg);
