@@ -300,6 +300,16 @@ export default function Landing() {
           <p className="text-lg sm:text-xl md:text-2xl max-w-xl mx-auto mb-10 text-[var(--color-text-secondary)]">
             Effortlessly capture, organize, and rediscover your ideas. Noteify brings clarity and creativity together with a beautiful, AI-powered workspace.
           </p>
+          <div className="flex justify-center mt-10">
+            <Link href="/auth">
+              <button
+                className="px-8 py-4 rounded-full bg-[var(--color-brand)] text-white text-xl font-bold shadow-lg hover:bg-[var(--color-brand-hover)] transition-colors focus:outline-none focus:ring-4 focus:ring-[var(--color-brand)] focus:ring-opacity-50"
+                style={{ minWidth: '200px' }}
+              >
+                Start Now
+              </button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-16 sm:mt-20 md:mt-24">

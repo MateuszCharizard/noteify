@@ -5,7 +5,7 @@ import Head from 'next/head';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Icons (consistent with notes.js, share.js, settings.js)
+// Icons
 const SunIcon = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="12" cy="12" r="4"></circle>
@@ -54,7 +54,7 @@ const CommentIcon = ({ className }) => (
   </svg>
 );
 
-// Themes (consistent with notes.js, share.js, settings.js)
+// Themes
 const themes = [
   { id: 'light', name: 'Light', vars: { '--color-background': '#f9fafb', '--color-bg-sidebar': 'rgba(249, 250, 251, 0.8)', '--color-bg-subtle': '#f3f4f6', '--color-bg-subtle-hover': '#e5e7eb', '--color-text-primary': '#171717', '--color-text-secondary': '#6b7280', '--color-border': '#e5e7eb', '--color-brand': '#3b82f6' } },
   { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-sidebar': 'rgba(10, 10, 10, 0.8)', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3a3', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
@@ -93,7 +93,7 @@ export default function ExplorePage() {
     Object.entries(nextTheme.vars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
   };
 
-  // Toggle comments visibility for a note
+  // Toggle comments visibility
   const toggleComments = (noteId) => {
     setShowComments((prev) => ({
       ...prev,
@@ -102,100 +102,91 @@ export default function ExplorePage() {
   };
 
   // Load user, notes, comments, likes, saved notes
-  React.useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Get user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('Auth error:', userError);
-          throw userError;
-        }
-        setUser(user);
-        console.log('Authenticated user:', user);
-
-        // Try fetching notes with profiles join
-        let notesData, notesError;
-        try {
-          ({ data: notesData, error: notesError } = await supabase
-            .from('shared_notes')
-            .select('id, note_id, title, content, owner_username, created_at, updated_at, user_id, is_public, profiles:profiles!user_id(username)')
-            .eq('is_public', true)
-            .order('created_at', { ascending: false }));
-          if (notesError) throw notesError;
-          console.log('Notes with profiles:', notesData);
-        } catch (err) {
-          console.warn('Profiles join failed, falling back to shared_notes only:', err);
-          // Fallback query without profiles
-          ({ data: notesData, error: notesError } = await supabase
-            .from('shared_notes')
-            .select('id, note_id, title, content, owner_username, created_at, updated_at, user_id, is_public')
-            .eq('is_public', true)
-            .order('created_at', { ascending: false }));
-          if (notesError) {
-            console.error('Fallback notes query error:', notesError);
-            throw notesError;
-          }
-          console.log('Fallback notes:', notesData);
-        }
-        setNotes(notesData || []);
-
-        // Fetch comments
-        const { data: commentsData, error: commentsError } = await supabase
-          .from('comments')
-          .select('*')
-          .order('created_at', { ascending: true });
-        if (commentsError) {
-          console.error('Comments query error:', commentsError);
-          throw commentsError;
-        }
-        const commentsByNote = commentsData.reduce((acc, comment) => {
-          acc[comment.note_id] = acc[comment.note_id] || [];
-          acc[comment.note_id].push(comment);
-          return acc;
-        }, {});
-        setComments(commentsByNote);
-
-        // Fetch likes
-        const { data: likesData, error: likesError } = await supabase
-          .from('likes')
-          .select('*');
-        if (likesError) {
-          console.error('Likes query error:', likesError);
-          throw likesError;
-        }
-        const likesByNote = likesData.reduce((acc, like) => {
-          acc[like.note_id] = acc[like.note_id] || [];
-          acc[like.note_id].push(like);
-          return acc;
-        }, {});
-        setLikes(likesByNote);
-
-        // Fetch saved notes (for authenticated user)
-        if (user) {
-          const { data: savedData, error: savedError } = await supabase
-            .from('saved_notes')
-            .select('*')
-            .eq('user_id', user.id);
-          if (savedError) {
-            console.error('Saved notes query error:', savedError);
-            throw savedError;
-          }
-          const savedByNote = savedData.reduce((acc, save) => {
-            acc[save.note_id] = save;
-            return acc;
-          }, {});
-          setSavedNotes(savedByNote);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading data:', err);
-        setToastMessage('Error loading notes.');
-        setLoading(false);
+  const loadData = async () => {
+    try {
+      // Get user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Auth error:', userError);
+        throw userError;
       }
-    };
+      setUser(user);
+      console.log('Authenticated user:', user ? user.id : 'null');
 
+      // Fetch shared_notes
+      const { data: notesData, error: notesError } = await supabase
+        .from('shared_notes')
+        .select('id, note_id, title, content, username, created_at, updated_at, user_id, is_public')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+      if (notesError) {
+        console.error('Notes query error:', notesError);
+        throw notesError;
+      }
+      console.log('Shared notes fetched:', notesData);
+      notesData.forEach(note => {
+        console.log(`Note ID: ${note.note_id}, Username: ${note.username || 'null'}, User ID: ${note.user_id}, Public: ${note.is_public}`);
+      });
+      setNotes(notesData || []);
+
+      // Fetch comments
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (commentsError) {
+        console.error('Comments query error:', commentsError);
+        throw commentsError;
+      }
+      const commentsByNote = commentsData.reduce((acc, comment) => {
+        acc[comment.note_id] = acc[comment.note_id] || [];
+        acc[comment.note_id].push(comment);
+        return acc;
+      }, {});
+      setComments(commentsByNote);
+
+      // Fetch likes
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('*');
+      if (likesError) {
+        console.error('Likes query error:', likesError);
+        throw likesError;
+      }
+      const likesByNote = likesData.reduce((acc, like) => {
+        acc[like.note_id] = acc[like.note_id] || [];
+        acc[like.note_id].push(like);
+        return acc;
+      }, {});
+      setLikes(likesByNote);
+
+      // Fetch saved notes
+      if (user) {
+        const { data: savedData, error: savedError } = await supabase
+          .from('saved_notes')
+          .select('*')
+          .eq('user_id', user.id);
+        if (savedError) {
+          console.error('Saved notes query error:', savedError);
+          throw savedError;
+        }
+        const savedByNote = savedData.reduce((acc, save) => {
+          acc[save.note_id] = save;
+          return acc;
+        }, {});
+        setSavedNotes(savedByNote);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setToastMessage('Error loading notes: ' + err.message);
+      setLoading(false);
+    }
+  };
+
+  // Run loadData on mount
+  React.useEffect(() => {
     loadData();
 
     // Real-time comments subscription
@@ -236,23 +227,9 @@ export default function ExplorePage() {
       })
       .subscribe();
 
-    // Real-time profiles subscription for username updates
-    const profileSubscription = supabase
-      .channel('public:profiles')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
-        console.log('Profile update received:', payload);
-        setNotes((prev) =>
-          prev.map((note) =>
-            note.user_id === payload.new.id ? { ...note, profiles: { ...note.profiles, username: payload.new.username } } : note
-          )
-        );
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(commentSubscription);
       supabase.removeChannel(likeSubscription);
-      supabase.removeChannel(profileSubscription);
     };
   }, []);
 
@@ -381,14 +358,23 @@ export default function ExplorePage() {
 
         {/* Main Content */}
         <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6">Explore Public Notes</h1>
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Explore Public Notes</h1>
+            <button
+              onClick={loadData}
+              className="px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
+              aria-label="Refresh notes"
+            >
+              Refresh Notes
+            </button>
+          </div>
           {loading ? (
             <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
               <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-[var(--color-brand)]"></div>
             </div>
           ) : notes.length === 0 ? (
             <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-              <p className="text-lg sm:text-xl text-[var(--color-text-secondary)]">No public notes yet.</p>
+              <p className="text-lg sm:text-xl text-[var(--color-text-secondary)]">No public notes found.</p>
             </div>
           ) : (
             <div className="space-y-6 sm:space-y-8">
@@ -399,7 +385,7 @@ export default function ExplorePage() {
                       <h2 className="text-lg sm:text-xl font-semibold hover:text-[var(--color-brand)] transition-colors">{note.title}</h2>
                     </Link>
                     <p className="text-sm sm:text-base text-[var(--color-text-secondary)] mt-1">
-                      By {note.profiles?.username || note.owner_username || 'Anonymous'} • {new Date(note.created_at).toLocaleDateString()}
+                      By {note.username || 'Anonymous'} • {new Date(note.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="prose prose-sm sm:prose-base max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-0 prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">

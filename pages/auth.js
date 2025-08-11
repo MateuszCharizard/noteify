@@ -168,7 +168,7 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -176,13 +176,27 @@ export default function AuthPage() {
           }
         });
         if (error) throw error;
-        // Try to sign in immediately after sign up (if email confirmation is not required)
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) {
-          alert('Check your email for the confirmation link!');
-        } else {
-          window.location.href = '/notes';
+        // Get the user id from the session (if available)
+        let userId = data?.user?.id;
+        // If not available, try to sign in to get the user id
+        if (!userId) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) {
+            alert('Check your email for the confirmation link!');
+            return;
+          }
+          userId = signInData?.user?.id;
         }
+        // Insert into profiles table
+        if (userId) {
+          await supabase.from('profiles').upsert({
+            id: userId,
+            username,
+            full_name: fullName,
+            email
+          });
+        }
+        window.location.href = '/notes';
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

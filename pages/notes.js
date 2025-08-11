@@ -532,12 +532,12 @@ export default function NotesPage() {
                           setToastMessage('Error: User not authenticated.');
                           return;
                         }
-                        const owner_username = profile.username || profile.full_name || 'Anonymous';
+                        const username = profile.username || profile.full_name || 'Anonymous';
                         const sharedNote = {
                           note_id: parseInt(activeNote.id),
                           title: activeNote.title || 'Untitled',
                           content: activeNote.content || '',
-                          owner_username,
+                          username,
                           created_at: activeNote.created_at || new Date().toISOString(),
                           updated_at: new Date().toISOString(),
                           user_id: user.id,

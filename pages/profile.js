@@ -44,23 +44,7 @@ export default function ProfilePage() {
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [bio, setBio] = useState('');
-
-  // Theme Management
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-  }, []);
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+  // Theme is now managed globally; no local theme state
   
   // Profile Data Fetching
   useEffect(() => {
@@ -175,32 +159,18 @@ export default function ProfilePage() {
           Home
         </Link>
         <div className="flex items-center gap-4">
-          <button
-            onClick={toggleTheme}
-            role="switch"
-            aria-checked={theme === 'dark'}
-            className={`relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]`}
-          >
-            <span className="sr-only">Toggle theme</span>
-            {/* --- FIX: Cleaned up classes for perfect centering --- */}
-            <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
-                theme === 'dark' ? 'translate-x-6' : 'translate-x-0'
-              }`}
-            >
-              {theme === 'dark' 
-                ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> 
-                : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />
-              }
-            </span>
-          </button>
-          
           <button onClick={handleSignOut} className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors">Sign Out</button>
         </div>
       </header>
 
       <main className="relative z-10 flex flex-col items-center justify-center w-full p-4 flex-grow">
-        <div className="w-full max-w-lg bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg p-8 border border-[var(--color-border)]">
+        <div className="w-full max-w-lg backdrop-blur-md rounded-2xl shadow-lg p-8 border border-[var(--color-border)]"
+          style={{
+            background: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+              ? 'rgba(10,10,10,0.8)'
+              : 'rgba(255,255,255,0.85)'
+          }}
+        >
           <div className="flex flex-col items-center mb-6">
             <label className="relative w-32 h-32 rounded-full cursor-pointer group flex items-center justify-center mb-4">
               <input type="file" accept="image/png, image/jpeg" onChange={handleProfilePicChange} disabled={isSubmitting} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -248,10 +218,10 @@ export default function ProfilePage() {
       
       <style jsx global>{`
         :root {
-          --color-background: #f9fafb;
+          --color-background: #fff;
           --color-bg-subtle: #f3f4f6;
           --color-bg-subtle-hover: #e5e7eb;
-          --color-bg-subtle-translucent: rgba(249, 250, 251, 0.8);
+          --color-bg-subtle-translucent: rgba(255,255,255,0.85);
           --color-text-primary: #171717;
           --color-text-secondary: #6b7280;
           --color-border: #e5e7eb;
