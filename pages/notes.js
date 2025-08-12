@@ -51,7 +51,7 @@ export default function NotesPage() {
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('personalisation');
   const [accountForm, setAccountForm] = useState({ full_name: '', username: '' });
@@ -203,10 +203,26 @@ export default function NotesPage() {
     }
   };
 
-  const handleCreateNote = async () => {
+  // --- Note Creation Modal ---
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newNoteForm, setNewNoteForm] = useState({ title: '', subject: '', tags: '', content: '' });
+
+  const handleCreateNote = () => {
+    setNewNoteForm({ title: '', subject: '', tags: '', content: '' });
+    setShowCreateModal(true);
+  };
+
+  const handleCreateNoteSubmit = async (e) => {
+    e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const newNote = { title: 'New Note', content: '', user_id: user.id, subject: 'General', tags: [] };
+    const newNote = {
+      title: newNoteForm.title || 'Untitled',
+      content: newNoteForm.content || '',
+      user_id: user.id,
+      subject: newNoteForm.subject || 'General',
+      tags: newNoteForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+    };
     try {
       const { data, error } = await supabase.from('notes').insert(newNote).select().single();
       if (error) throw error;
@@ -214,9 +230,8 @@ export default function NotesPage() {
       setActiveNote(data);
       setToastMessage('Note created!');
       setSidebarOpen(false);
-      setPreviewMode(false);
+      setShowCreateModal(false);
     } catch (error) {
-      console.error("Create error:", error);
       setToastMessage('Error: Could not create note.');
     }
   };
@@ -452,6 +467,23 @@ export default function NotesPage() {
         <div className="p-3 sm:p-4 flex-shrink-0">
           <button onClick={handleCreateNote} className="w-full flex items-center justify-center gap-2 py-1 sm:py-2 px-2 sm:px-3 bg-[var(--color-brand)] text-white rounded-md hover:opacity-90 transition-colors font-semibold text-xs sm:text-sm"><PlusIcon className="w-4 h-4" /> New Note</button>
         </div>
+        {/* Note Creation Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)}></div>
+            <form onSubmit={handleCreateNoteSubmit} className="relative z-10 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg p-6 w-full max-w-md shadow-xl flex flex-col gap-4">
+              <h3 className="text-lg font-semibold mb-2">Create New Note</h3>
+              <input type="text" placeholder="Title" value={newNoteForm.title} onChange={e => setNewNoteForm(f => ({...f, title: e.target.value}))} className="w-full p-2 rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)]" required />
+              <input type="text" placeholder="Subject (e.g., Work, Personal)" value={newNoteForm.subject} onChange={e => setNewNoteForm(f => ({...f, subject: e.target.value}))} className="w-full p-2 rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)]" />
+              <input type="text" placeholder="Tags (comma separated)" value={newNoteForm.tags} onChange={e => setNewNoteForm(f => ({...f, tags: e.target.value}))} className="w-full p-2 rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)]" />
+              <textarea placeholder="Start writing..." value={newNoteForm.content} onChange={e => setNewNoteForm(f => ({...f, content: e.target.value}))} className="w-full p-2 rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)] min-h-[120px]" />
+              <div className="flex justify-end gap-2 mt-2">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)]">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded bg-[var(--color-brand)] text-white font-semibold">Create</button>
+              </div>
+            </form>
+          </div>
+        )}
         <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
@@ -466,7 +498,7 @@ export default function NotesPage() {
           {filteredNotes.length > 0 ? (
             filteredNotes.map(note => (
               <div key={note.id} className={`flex items-center rounded-md transition-colors duration-150 ${activeNote?.id === note.id ? 'bg-[var(--color-brand)] text-white' : 'hover:bg-[var(--color-bg-subtle-hover)]'}`}>
-                <a onClick={() => { setActiveNote(note); setSidebarOpen(false); setPreviewMode(false); }} className={`flex-grow p-2 sm:p-3 rounded-l-md cursor-pointer ${activeNote?.id === note.id ? 'text-white' : ''}`}>
+                <a onClick={() => { setActiveNote(note); setSidebarOpen(false); }} className={`flex-grow p-2 sm:p-3 rounded-l-md cursor-pointer ${activeNote?.id === note.id ? 'text-white' : ''}`}>
                   <div className="flex justify-between items-center">
                     <h3 className="font-medium text-xs sm:text-sm truncate">{note.title || 'Untitled'}</h3>
                     {note.subject && (<span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${activeNote?.id === note.id ? 'bg-white/20' : 'bg-[var(--color-bg-subtle)] text-[var(--color-text-secondary)]'}`}>{note.subject}</span>)}
@@ -501,21 +533,49 @@ export default function NotesPage() {
           <div className="flex items-center justify-center gap-1 sm:gap-2">
             {activeNote && (
               <>
-                <div className="flex items-center p-0.5 bg-[var(--color-bg-subtle)] rounded-lg">
-                  <button onClick={() => setPreviewMode(false)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${!previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Write</button>
-                  <button onClick={() => setPreviewMode(true)} className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-md transition-colors ${previewMode ? 'bg-[var(--color-background)] shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle-hover)]'}`}>Preview</button>
-                </div>
+                {/* Removed write/preview toggle */}
                 <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-1 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={(e) => setIsPublic(e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-[var(--color-brand)]"
-                      aria-label="Make note public"
-                    />
-                    <span>Public</span>
-                  </label>
+                  {/* Sleek toggle for public/private */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isPublic}
+                      onClick={async () => {
+                        const newPublic = !isPublic;
+                        setIsPublic(newPublic);
+                        if (!activeNote || !activeNote.id) return;
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        if (newPublic) {
+                          const username = profile?.username || profile?.full_name || 'Anonymous';
+                          const sharedNote = {
+                            note_id: parseInt(activeNote.id),
+                            title: activeNote.title || 'Untitled',
+                            content: activeNote.content || '',
+                            username,
+                            created_at: activeNote.created_at || new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                            user_id: user.id,
+                            is_public: true,
+                          };
+                          await supabase.from('shared_notes').upsert(sharedNote, { onConflict: ['note_id'] });
+                          setToastMessage('Note is now public.');
+                        } else {
+                          await supabase.from('shared_notes').delete().eq('note_id', activeNote.id);
+                          setToastMessage('Note is no longer public.');
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none border-2 ${isPublic ? 'bg-[var(--color-brand)] border-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)] border-[var(--color-border)]'}`}
+                      style={{ boxShadow: isPublic ? '0 0 0 2px var(--color-brand)' : '0 0 0 1px var(--color-border)' }}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${isPublic ? 'translate-x-6' : 'translate-x-1'}`}
+                        style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.10)' }}
+                      />
+                    </button>
+                    <span className="text-xs font-medium text-[var(--color-text-secondary)] select-none">Public</span>
+                  </div>
                   <button
                     onClick={async () => {
                       try {
@@ -590,13 +650,7 @@ export default function NotesPage() {
                 <input type="text" value={activeNote.subject || ''} onChange={(e) => handleUpdateNote('subject', e.target.value)} placeholder="Subject (e.g., Work, Personal)" className="w-full p-2 text-xs sm:text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none" />
                 <input type="text" value={activeNote.tags?.join(', ') || ''} onChange={(e) => handleUpdateNote('tags', e.target.value)} placeholder="Add tags, comma-separated..." className="w-full p-2 text-xs sm:text-sm bg-[var(--color-bg-subtle)] rounded-md focus:ring-2 focus:ring-[var(--color-brand)] border-none outline-none" />
               </div>
-              {previewMode ? (
-                <article className="prose prose-sm sm:prose-lg prose-p:my-2 prose-headings:my-3 sm:prose-headings:my-4 prose-li:my-0 max-w-none prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeNote.content || '*Nothing to preview...*'}</ReactMarkdown>
-                </article>
-              ) : (
-                <textarea value={activeNote.content} onChange={(e) => handleUpdateNote('content', e.target.value)} className="w-full mt-2 min-h-[50vh] bg-transparent text-xs sm:text-base focus:outline-none placeholder:text-[var(--color-text-secondary)] leading-relaxed resize-none font-mono" placeholder="Start writing..." onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} />
-              )}
+              <textarea value={activeNote.content} onChange={(e) => handleUpdateNote('content', e.target.value)} className="w-full mt-2 min-h-[50vh] bg-transparent text-xs sm:text-base focus:outline-none placeholder:text-[var(--color-text-secondary)] leading-relaxed resize-none font-mono" placeholder="Start writing..." onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-secondary)] p-6 sm:p-8 gap-3 sm:gap-4">

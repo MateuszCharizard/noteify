@@ -183,6 +183,36 @@ export default function ProfilePage() {
             </label>
             <h1 className="text-3xl font-bold">{fullName || username || 'New User'}</h1>
             <p className="text-[var(--color-text-secondary)]">@{username || 'username'}</p>
+            {/* Badges Row */}
+            {profile?.badges && (
+              <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                {(() => {
+                  // Map badge names to image URLs and tooltips
+                  const badgeMap = {
+                    'Bug Hunter': { img: 'https://i.imgur.com/fe4vkds.png', label: 'Bug Hunter' },
+                    'Premium': { img: 'https://i.imgur.com/Z05yrUp.png', label: 'Premium' },
+                    'Staff': { img: 'https://i.imgur.com/fapDrDU.png', label: 'Staff' },
+                    'Partner': { img: 'https://i.imgur.com/F5JLVzH.png', label: 'Partner' },
+                    'CEO': { img: 'https://i.imgur.com/UrBm8WI.png', label: 'CEO' },
+                  };
+                  // Support both comma-separated and array
+                  let badgeList = Array.isArray(profile.badges) ? profile.badges : (profile.badges || '').split(',').map(b => b.trim()).filter(Boolean);
+                  return badgeList.map(badge => badgeMap[badge] && (
+                    <span key={badge} className="relative group">
+                      <img
+                        src={badgeMap[badge].img}
+                        alt={badgeMap[badge].label}
+                        className="w-8 h-8 rounded-md hover:scale-110 transition-transform"
+                        style={{ background: 'transparent' }}
+                      />
+                      <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 text-xs rounded bg-black text-white whitespace-nowrap z-20 ">
+                        {badgeMap[badge].label}
+                      </span>
+                    </span>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
 
           {updateMessage.text && <p className={`text-center mb-4 text-sm ${updateMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>{updateMessage.text}</p>}
@@ -216,7 +246,7 @@ export default function ProfilePage() {
         </div>
       </main>
       
-      <style jsx global>{`
+  <style jsx global>{`
         :root {
           --color-background: #fff;
           --color-bg-subtle: #f3f4f6;
@@ -244,6 +274,10 @@ export default function ProfilePage() {
           /* New variables for the switch */
           --color-switch-track: #4f46e5; /* indigo-600 */
           --color-switch-icon: #c7d2fe; /* indigo-200 */
+        }
+        /* Custom tooltip for badge hover */
+        .group:hover .group-hover\:opacity-100 {
+          opacity: 1 !important;
         }
       `}</style>
     </div>
