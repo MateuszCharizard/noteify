@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'experimental-edge';
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
