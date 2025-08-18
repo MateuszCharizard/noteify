@@ -6,7 +6,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 export async function fetchConversations(userId) {
   const { data, error } = await supabase
     .from('conversations')
-    .select('id, participants:users(id, username, avatar_url), last_message, updated_at')
+    .select('id, participant_ids, last_message, updated_at')
     .contains('participant_ids', [userId])
     .order('updated_at', { ascending: false });
   if (error) throw error;

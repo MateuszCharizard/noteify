@@ -13,6 +13,7 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
   if (!profile) return null;
+  const isSelf = currentUserId === profile.id;
 
   const badgeMap = {
     'Bug Hunter': { img: 'https://i.imgur.com/fe4vkds.png', label: 'Bug Hunter' },
@@ -84,19 +85,20 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
         <form className="w-full mt-2 flex gap-2" onSubmit={handleSendMessage}>
           <input
             className="flex-1 rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder={`Message @${profile.username || ''}`}
+            placeholder={isSelf ? 'You cannot message yourself' : `Message @${profile.username || ''}`}
             value={message}
             onChange={e => { setMessage(e.target.value); setSent(false); setError(null); }}
-            disabled={sending}
+            disabled={sending || isSelf}
             maxLength={500}
             autoFocus
           />
           <button
             type="submit"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
-            disabled={sending || !message.trim()}
+            disabled={sending || !message.trim() || isSelf}
           >Send</button>
         </form>
+        {isSelf && <div className="text-yellow-400 text-xs mt-1">You cannot message yourself.</div>}
         {sent && <div className="text-green-400 text-xs mt-1">Message sent!</div>}
         {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
       </div>
