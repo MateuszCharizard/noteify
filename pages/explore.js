@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
+const ProfileBox = dynamic(() => import('../components/ProfileBox'), { ssr: false });
+import { fetchProfileById } from '../components/fetchProfile';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Head from 'next/head';
@@ -65,16 +68,29 @@ const themes = [
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export default function ExplorePage() {
-  const [notes, setNotes] = React.useState([]);
-  const [comments, setComments] = React.useState({});
-  const [likes, setLikes] = React.useState({});
-  const [savedNotes, setSavedNotes] = React.useState({});
-  const [newComments, setNewComments] = React.useState({});
-  const [showComments, setShowComments] = React.useState({});
-  const [user, setUser] = React.useState(null);
-  const [theme, setTheme] = React.useState('dark');
-  const [toastMessage, setToastMessage] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  const [notes, setNotes] = useState([]);
+  const [comments, setComments] = useState({});
+  const [likes, setLikes] = useState({});
+  const [savedNotes, setSavedNotes] = useState({});
+  const [newComments, setNewComments] = useState({});
+  const [showComments, setShowComments] = useState({});
+  const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('dark');
+  const [toastMessage, setToastMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [profilePopup, setProfilePopup] = useState({ open: false, profile: null, loading: false, error: null });
+
+  // Show profile popup for a username
+  const handleShowProfile = async (userId) => {
+    if (!userId) return;
+    setProfilePopup({ open: true, profile: null, loading: true, error: null });
+    try {
+      const profile = await fetchProfileById(userId);
+      setProfilePopup({ open: true, profile, loading: false, error: null });
+    } catch (err) {
+      setProfilePopup({ open: true, profile: null, loading: false, error: 'Profile not found' });
+    }
+  };
 
   // Load theme
   React.useEffect(() => {
@@ -385,8 +401,30 @@ export default function ExplorePage() {
                       <h2 className="text-lg sm:text-xl font-semibold hover:text-[var(--color-brand)] transition-colors">{note.title}</h2>
                     </Link>
                     <p className="text-sm sm:text-base text-[var(--color-text-secondary)] mt-1">
-                      By {note.username || 'Anonymous'} • {new Date(note.created_at).toLocaleDateString()}
+                      By <button
+                        className="font-semibold hover:underline text-[var(--color-brand)] focus:outline-none"
+                        onClick={() => handleShowProfile(note.user_id)}
+                        type="button"
+                      >
+                        {note.username || 'Anonymous'}
+                      </button> • {new Date(note.created_at).toLocaleDateString()}
                     </p>
+      {/* Profile Popup */}
+      {profilePopup.open && (
+        <>
+          {profilePopup.loading ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">Loading...</div>
+            </div>
+          ) : profilePopup.profile ? (
+            <ProfileBox profile={profilePopup.profile} onClose={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })} />
+          ) : (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}>
+              <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">{profilePopup.error || 'Profile not found'}</div>
+            </div>
+          )}
+        </>
+      )}
                   </div>
                   <div className="prose prose-sm sm:prose-base max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-0 prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.content.slice(0, 200) + (note.content.length > 200 ? '...' : '')}</ReactMarkdown>
