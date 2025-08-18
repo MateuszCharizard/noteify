@@ -417,7 +417,7 @@ export default function ExplorePage() {
               <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">Loading...</div>
             </div>
           ) : profilePopup.profile ? (
-            <ProfileBox profile={profilePopup.profile} onClose={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })} />
+            <ProfileBox profile={profilePopup.profile} onClose={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })} currentUserId={user?.id} />
           ) : (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}>
               <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">{profilePopup.error || 'Profile not found'}</div>

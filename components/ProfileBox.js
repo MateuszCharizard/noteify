@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { startConversation, sendMessage } from './chatApi';
 
 /**
  * ProfileBox - A Discord-style profile popup component.
@@ -6,7 +7,11 @@ import React from 'react';
  *   - profile: { avatar_url, full_name, username, id, badges, bio, role }
  *   - onClose: function to close the box
  */
-export default function ProfileBox({ profile, onClose }) {
+export default function ProfileBox({ profile, onClose, currentUserId }) {
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
   if (!profile) return null;
 
   const badgeMap = {
@@ -20,6 +25,24 @@ export default function ProfileBox({ profile, onClose }) {
     ? profile.badges
     : (profile.badges || '').split(',').map(b => b.trim()).filter(Boolean);
   const avatarSrc = profile.avatar_url || `https://avatar.vercel.sh/${profile.username || 'A'}.png?size=128`;
+
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    if (!message.trim() || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      // Start or get conversation
+      const convo = await startConversation(currentUserId, profile.id);
+      await sendMessage(convo.id, currentUserId, message.trim());
+      setSent(true);
+      setMessage('');
+    } catch (err) {
+      setError('Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -58,13 +81,24 @@ export default function ProfileBox({ profile, onClose }) {
           </div>
         )}
         <div className="text-[var(--color-text-primary)] text-sm mb-2 min-h-[2rem]">{profile.bio || 'No bio yet.'}</div>
-        <div className="w-full mt-2">
+        <form className="w-full mt-2 flex gap-2" onSubmit={handleSendMessage}>
           <input
-            className="w-full rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={`Message @${profile.username || ''}`}
-            disabled
+            value={message}
+            onChange={e => { setMessage(e.target.value); setSent(false); setError(null); }}
+            disabled={sending}
+            maxLength={500}
+            autoFocus
           />
-        </div>
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+            disabled={sending || !message.trim()}
+          >Send</button>
+        </form>
+        {sent && <div className="text-green-400 text-xs mt-1">Message sent!</div>}
+        {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
       </div>
       <style jsx global>{`
         .group:hover .group-hover\:opacity-100 {
