@@ -18,7 +18,13 @@ const MoonIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke
 const PlusIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>);
 const TrashIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
 const SearchIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>);
-const FileTextIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>);
+const FileTextIcon = (props) => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path d="M16 3L3 9.75V22.25L16 29L29 22.25V9.75L16 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 17V29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3 9.75L16 17L29 9.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 const MenuIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>);
 const CloseIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
 const CogIcon = ({ className }) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>);
@@ -68,17 +74,18 @@ export default function NotesPage() {
       const { data: { user } } = await supabase.auth.getUser();
       let loadedTheme = 'dark';
       if (user) {
+        // Always load from user_settings if available
         const { data: settings } = await supabase.from('user_settings').select('theme').eq('id', user.id).single();
         if (settings && settings.theme) {
           loadedTheme = settings.theme;
         }
       } else {
+        // Only use localStorage if not logged in
         const savedTheme = localStorage.getItem('theme');
         loadedTheme = savedTheme || 'dark';
       }
       setTheme(loadedTheme);
       setThemeLoaded(true);
-      localStorage.setItem('theme', loadedTheme);
     })();
   }, []);
 
@@ -198,7 +205,10 @@ export default function NotesPage() {
       setNotes(notesData || []);
       if (notesData?.length > 0) setActiveNote(notesData[0]);
       setProfile(profileData);
-      setTheme(profileData?.theme || 'dark');
+      // Only set theme from profile if it exists and is valid
+      if (profileData?.theme && themes.some(t => t.id === profileData.theme)) {
+        setTheme(profileData.theme);
+      }
       setAnimatedBg(profileData?.animated_bg ?? true);
       setStarCount(profileData?.star_count || 500);
       setStarSpeed(profileData?.star_speed || 0.0002);
@@ -293,16 +303,16 @@ export default function NotesPage() {
 
     // Handle theme update
     if (settings.theme) {
-      setTheme(settings.theme);
-      localStorage.setItem('theme', settings.theme);
+      // Save to DB first
       const { error } = await supabase.from('user_settings').upsert({ id: user.id, theme: settings.theme, updated_at: new Date().toISOString() });
       if (error) {
         setToastMessage('Error saving settings.');
         console.error(error);
         return;
-      } else {
-        setToastMessage('Settings saved!');
       }
+      setTheme(settings.theme);
+      setProfile(prev => prev ? { ...prev, theme: settings.theme } : prev);
+      setToastMessage('Settings saved!');
     }
 
     // Handle animated background settings

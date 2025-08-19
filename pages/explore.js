@@ -21,10 +21,11 @@ const MoonIcon = ({ className }) => (
     <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
   </svg>
 );
-const HomeIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+const BoxIcon = (props) => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path d="M16 3L3 9.75V22.25L16 29L29 22.25V9.75L16 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 17V29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3 9.75L16 17L29 9.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 const FileTextIcon = ({ className }) => (
@@ -78,6 +79,7 @@ export default function ExplorePage() {
   const [showComments, setShowComments] = useState({});
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState('dark');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profilePopup, setProfilePopup] = useState({ open: false, profile: null, loading: false, error: null });
@@ -102,14 +104,7 @@ export default function ExplorePage() {
     Object.entries(themeVars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
   }, []);
 
-  // Toggle theme
-  const toggleTheme = () => {
-    const currentIndex = themes.findIndex(t => t.id === theme);
-    const nextTheme = themes[(currentIndex + 1) % themes.length];
-    setTheme(nextTheme.id);
-    localStorage.setItem('theme', nextTheme.id);
-    Object.entries(nextTheme.vars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
-  };
+
 
   // Toggle comments visibility
   const toggleComments = (noteId) => {
@@ -351,28 +346,41 @@ export default function ExplorePage() {
         {/* Header */}
         <header className="bg-[var(--color-bg-sidebar)] backdrop-blur-sm border-b border-[var(--color-border)] sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <h1 className="text-lg sm:text-xl font-bold">NoteShare</h1>
+            <Link href="/" className="flex items-center gap-2 group" title="Home">
+              <BoxIcon className="w-6 h-6 text-[var(--color-brand)] group-hover:scale-110 transition-transform" />
+              <span className="text-lg sm:text-xl font-bold">Noteify</span>
+            </Link>
             <nav className="flex items-center space-x-2 sm:space-x-4">
-              <Link href="/" className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors" title="Home">
-                <HomeIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </Link>
-              <Link href="/notes" className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors" title="Notes">
+              <Link href="/notes" className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors flex items-center gap-1" title="Back to Notes">
                 <FileTextIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </Link>
-              <Link href="/settings" className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors" title="Settings">
-                <CogIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="hidden sm:inline font-semibold">Back to Notes</span>
               </Link>
               <button
-                onClick={toggleTheme}
+                onClick={() => setShowSettingsModal(true)}
                 className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors"
-                title="Toggle theme"
-                aria-label="Toggle theme"
+                title="Settings"
+                aria-label="Settings"
               >
-                {theme === 'light' ? <MoonIcon className="w-5 h-5 sm:w-6 sm:h-6" /> : <SunIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
+                <CogIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </nav>
           </div>
         </header>
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
+          <div role="dialog" className="relative z-10 bg-white/70 dark:bg-[#1e293b]/80 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-2xl shadow-2xl text-[var(--color-text-primary)] flex flex-col max-h-[90vh] backdrop-blur-2xl" style={{boxShadow:'0 8px 32px 0 rgba(31,38,135,0.25)'}}>
+            <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
+              <span className="font-semibold text-base tracking-wide">Settings</span>
+              <button onClick={() => setShowSettingsModal(false)} className="ml-auto px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <p className="text-sm text-[var(--color-text-secondary)]">Settings modal content goes here. (You can move your settings UI here from notes.js if you want shared settings.)</p>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Main Content */}
         <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
