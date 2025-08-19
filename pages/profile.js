@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import * as THREE from 'three';
 
 // This is a stand-in for Next.js's Head component for this environment.
 const Head = ({ children }) => {
@@ -38,7 +37,7 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [updateMessage, setUpdateMessage] = useState({ text: '', type: 'success' });
-  const backgroundRef = useRef(null);
+  // Removed animated background
 
   // States for form inputs
   const [username, setUsername] = useState('');
@@ -78,10 +77,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  // Three.js background effect
-  useEffect(() => {
-    // ... (3D background code remains the same)
-  }, [theme]);
+
 
   // Handlers
   const handleProfileUpdate = async (e) => {
@@ -152,7 +148,7 @@ export default function ProfilePage() {
       <Head>
         <title>Noteify - Your Profile</title>
       </Head>
-      <div id="background" ref={backgroundRef} className="absolute inset-0 z-0"></div>
+
       
       <header className="w-full max-w-7xl mx-auto px-6 py-4 flex justify-between items-center z-20">
         <Link href="/" className="px-4 py-2 text-sm font-semibold rounded-lg bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors">

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import '../styles/globals.css';
 import dynamic from 'next/dynamic';
 import { useEffect as useEffect2, useState as useState2 } from 'react';
+import ChatBox from '../components/ChatBox';
 const DMButton = dynamic(() => import('../components/DMButton'), { ssr: false });
 const ProfileBox = dynamic(() => import('../components/ProfileBox'), { ssr: false });
 import { fetchConversations, fetchMessages, sendMessage } from '../components/chatApi';
@@ -25,7 +26,21 @@ function MessagesPopup({ open, onClose, userId }) {
   const [searchUsername, setSearchUsername] = useState2('');
   const [searchResult, setSearchResult] = useState2(null);
   const [searchError, setSearchError] = useState2(null);
-  // Fetch conversations on open
+  const [theme, setTheme] = useState2('dark');
+  useEffect2(() => {
+    const updateTheme = () => {
+      const t = document.documentElement.getAttribute('data-theme') || 'dark';
+      setTheme(t);
+    };
+    updateTheme();
+    window.addEventListener('storage', updateTheme);
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      window.removeEventListener('storage', updateTheme);
+      observer.disconnect();
+    };
+  }, []);
   useEffect2(() => {
     if (open && userId) {
       fetchConversations(userId).then(async (convs) => {
@@ -126,64 +141,19 @@ function MessagesPopup({ open, onClose, userId }) {
         <button className="absolute top-3 right-3 text-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] z-10" onClick={onClose}>&times;</button>
         <div className="flex h-full">
           {/* Sidebar */}
-          <div className="w-80 min-w-[18rem] border-r border-[var(--color-border)] bg-black/20 flex flex-col">
-            <div className="font-bold text-xl text-white px-6 py-4 border-b border-[var(--color-border)]">Chats</div>
-            <form className="flex gap-2 px-4 py-3" onSubmit={handleSearchUsername}>
-              <input className="flex-1 rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search username..." value={searchUsername} onChange={e => setSearchUsername(e.target.value)} disabled={loading} />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50" disabled={loading || !searchUsername.trim()}>Search</button>
-            </form>
-            {searchError && <div className="text-red-400 text-xs px-6 mb-2">{searchError}</div>}
-            {searchResult && (
-              <div className="flex items-center gap-2 mb-2 bg-black/20 rounded p-2 mx-4">
-                <img src={searchResult.avatar_url || `https://avatar.vercel.sh/${searchResult.username}.png?size=32`} alt="avatar" className="w-8 h-8 rounded-full" />
-                <div className="flex-1">
-                  <div className="font-semibold text-white">{searchResult.full_name || searchResult.username}</div>
-                  <div className="text-xs text-[var(--color-text-secondary)]">@{searchResult.username}</div>
-                </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded disabled:opacity-50" disabled={loading} onClick={() => handleStartConversationWithUser(searchResult)}>Start Chat</button>
-              </div>
-            )}
-            <div className="flex-1 overflow-y-auto">
-              {conversations.length === 0 && <div className="text-[var(--color-text-secondary)] text-center mt-8">No conversations</div>}
-              {conversations.map(conv => {
-                const otherId = conv.participant_ids.find(id => id !== userId);
-                const profile = conversationProfiles[otherId];
-                return (
-                  <div key={conv.id} className={`p-3 cursor-pointer hover:bg-black/30 ${selected && selected.id === conv.id ? 'bg-black/40' : ''} flex items-center gap-3`} onClick={() => setSelected(conv)}>
-                    <img src={profile?.avatar_url || `https://avatar.vercel.sh/${profile?.username || 'U'}.png?size=32`} alt="avatar" className="w-9 h-9 rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-white truncate">{profile?.full_name || profile?.username || 'User'}</div>
-                      <div className="text-xs text-[var(--color-text-secondary)] truncate">{conv.last_message || 'No messages yet'}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          
           {/* Main chat area */}
-          <div className="flex-1 flex flex-col">
-            {selected ? (
-              <>
-                <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-6 py-4 bg-black/10">
-                  <img src={(() => { const otherId = selected.participant_ids.find(id => id !== userId); const p = conversationProfiles[otherId]; return p?.avatar_url || `https://avatar.vercel.sh/${p?.username || 'U'}.png?size=32`; })()} alt="avatar" className="w-9 h-9 rounded-full" />
-                  <div className="font-semibold text-white text-lg">{(() => { const otherId = selected.participant_ids.find(id => id !== userId); const p = conversationProfiles[otherId]; return p?.full_name || p?.username || 'User'; })()}</div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 bg-black/5">
-                  {messages.map(msg => (
-                    <div key={msg.id} className={`mb-3 flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`rounded-2xl px-4 py-2 max-w-lg ${msg.sender_id === userId ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'}`}>{msg.content}</div>
-                    </div>
-                  ))}
-                </div>
-                <form className="flex gap-2 p-4 border-t border-[var(--color-border)] bg-black/10" onSubmit={handleSend}>
-                  <input className="flex-1 rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a message..." value={input} onChange={e => setInput(e.target.value)} disabled={loading} />
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50" disabled={loading || !input.trim()}>Send</button>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-[var(--color-text-secondary)] text-lg">Select a chat</div>
-            )}
-          </div>
+          <ChatBox
+            messages={messages}
+            onSend={handleSend}
+            input={input}
+            setInput={setInput}
+            loading={loading}
+            theme={theme}
+            userId={userId}
+            conversationProfiles={conversationProfiles}
+            selected={selected}
+          />
         </div>
       </div>
     </div>

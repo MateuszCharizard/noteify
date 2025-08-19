@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { startConversation, sendMessage } from './chatApi';
 
 /**
@@ -12,6 +12,21 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => {
+    const updateTheme = () => {
+      const t = document.documentElement.getAttribute('data-theme') || 'dark';
+      setTheme(t);
+    };
+    updateTheme();
+    window.addEventListener('storage', updateTheme);
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      window.removeEventListener('storage', updateTheme);
+      observer.disconnect();
+    };
+  }, []);
   if (!profile) return null;
   const isSelf = currentUserId === profile.id;
 
@@ -44,12 +59,12 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
       setSending(false);
     }
   }
-
+  const isDark = theme === 'dark' || theme === 'sunset' || theme === 'forest';
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="relative bg-[var(--color-background)] rounded-2xl shadow-2xl w-80 max-w-full p-6 flex flex-col items-center text-center"
-        style={{ background: 'rgba(30,41,59,0.98)' }}
+        className={`relative rounded-2xl shadow-2xl w-80 max-w-full p-6 flex flex-col items-center text-center ${isDark ? 'bg-[#232a36]' : 'bg-white'}`}
+        style={{ background: isDark ? 'rgba(30,41,59,0.98)' : '#fff' }}
         onClick={e => e.stopPropagation()}
       >
         <button className="absolute top-3 right-3 text-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]" onClick={onClose}>&times;</button>
@@ -58,10 +73,10 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
           alt="Profile"
           className="w-24 h-24 rounded-full object-cover mb-3"
         />
-        <div className="font-bold text-xl text-white flex items-center gap-2 justify-center">
+        <div className={`font-bold text-xl flex items-center gap-2 justify-center ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {profile.full_name || profile.username || 'User'}
         </div>
-        <div className="text-[var(--color-text-secondary)] text-sm mb-2">{profile.username && `@${profile.username}`}</div>
+        <div className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{profile.username && `@${profile.username}`}</div>
         <div className="flex flex-wrap gap-2 justify-center mb-2">
           {badgeList.map(badge => badgeMap[badge] && (
             <span key={badge} className="relative group">
@@ -81,10 +96,10 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
             <span className="inline-block px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold ">{profile.role}</span>
           </div>
         )}
-        <div className="text-[var(--color-text-primary)] text-sm mb-2 min-h-[2rem]">{profile.bio || 'No bio yet.'}</div>
+  <div className={`text-sm mb-2 min-h-[2rem] ${isDark ? 'text-white' : 'text-gray-900'}`}>{profile.bio || 'No bio yet.'}</div>
         <form className="w-full mt-2 flex gap-2" onSubmit={handleSendMessage}>
           <input
-            className="flex-1 rounded bg-black/30 px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`flex-1 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark ? 'bg-black/30 text-white placeholder:text-gray-400' : 'bg-gray-100 text-gray-900 placeholder:text-gray-400'}`}
             placeholder={isSelf ? 'You cannot message yourself' : `Message @${profile.username || ''}`}
             value={message}
             onChange={e => { setMessage(e.target.value); setSent(false); setError(null); }}
@@ -94,13 +109,13 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
           />
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+            className={`px-4 py-2 rounded font-semibold disabled:opacity-50 ${isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
             disabled={sending || !message.trim() || isSelf}
           >Send</button>
         </form>
-        {isSelf && <div className="text-yellow-400 text-xs mt-1">You cannot message yourself.</div>}
-        {sent && <div className="text-green-400 text-xs mt-1">Message sent!</div>}
-        {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
+  {isSelf && <div className="text-yellow-400 text-xs mt-1">You cannot message yourself.</div>}
+  {sent && <div className="text-green-400 text-xs mt-1">Message sent!</div>}
+  {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
       </div>
       <style jsx global>{`
         .group:hover .group-hover\:opacity-100 {

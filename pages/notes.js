@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import * as THREE from 'three';
 import Head from 'next/head';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
@@ -44,9 +43,7 @@ export default function NotesPage() {
   const [theme, setTheme] = useState('dark');
   // Track if theme is loaded from Supabase
   const [themeLoaded, setThemeLoaded] = useState(false);
-  const [animatedBg, setAnimatedBg] = useState(true);
-  const [starCount, setStarCount] = useState(500);
-  const [starSpeed, setStarSpeed] = useState(0.0002);
+  // Removed animated background and star settings
   const [notes, setNotes] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,8 +61,7 @@ export default function NotesPage() {
   const [isPublic, setIsPublic] = useState(false);
 
   // --- Refs ---
-  const backgroundRef = useRef(null);
-  const debounceTimeout = useRef(null);
+  const debounceTimeout = React.useRef(null);
 
   // --- Effects ---
   // Load theme from Supabase or localStorage on mount
@@ -100,58 +96,7 @@ export default function NotesPage() {
     localStorage.setItem('theme', theme);
   }, [theme, themeLoaded]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !backgroundRef.current || !animatedBg) {
-      if (backgroundRef.current) backgroundRef.current.innerHTML = '';
-      return;
-    }
-    const isMobile = window.innerWidth <= 640;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    backgroundRef.current.innerHTML = '';
-    backgroundRef.current.appendChild(renderer.domElement);
-    const adjustedStarCount = isMobile ? Math.floor(starCount / 2) : starCount;
-    const starGeometry = new THREE.SphereGeometry(isMobile ? 0.03 : 0.05, 16, 16);
-    const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-    const stars = new THREE.Group();
-    for (let i = 0; i < adjustedStarCount; i++) {
-      const star = new THREE.Mesh(starGeometry, starMaterial);
-      star.position.set((Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150);
-      stars.add(star);
-    }
-    scene.add(stars);
-    camera.position.z = isMobile ? 60 : 50;
-    let mouseX = 0;
-    const onMouseMove = (e) => { mouseX = e.clientX; };
-    document.addEventListener('mousemove', onMouseMove);
-    let animationFrameId;
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      stars.rotation.y += isMobile ? starSpeed / 2 : starSpeed;
-      const targetRotation = (mouseX / window.innerWidth - 0.5) * 0.2;
-      camera.rotation.y += (targetRotation - camera.rotation.y) * 0.02;
-      starMaterial.opacity = theme === 'light' ? 0.3 : 0.7;
-      renderer.render(scene, camera);
-    };
-    animate();
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('mousemove', onMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      if (renderer) renderer.dispose();
-      if (backgroundRef.current) backgroundRef.current.innerHTML = '';
-    };
-  }, [theme, animatedBg, starCount, starSpeed]);
+
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -376,7 +321,7 @@ export default function NotesPage() {
     <div className="h-screen font-sans bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-300 flex overflow-hidden">
       <Head><title>Noteify - Your Notes</title></Head>
 
-      <div id="background" ref={backgroundRef} className="fixed inset-0 z-0 opacity-50"></div>
+
 
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 max-w-xs sm:max-w-sm opacity-100 translate-y-0">
@@ -423,25 +368,6 @@ export default function NotesPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                  <div className="border-t border-[var(--color-border)] pt-8">
-                    <h3 className="font-semibold text-base mb-4 tracking-wide">Animated Background</h3>
-                    <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-[#334155]/60 rounded-2xl shadow-sm">
-                      <label htmlFor="bg-toggle" className="font-medium text-sm">Enable Animation</label>
-                      <button onClick={() => handleSettingsUpdate({ animated_bg: !animatedBg })} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}>
-                        <span className={`block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform duration-200 ${animatedBg ? 'translate-x-7' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                    <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}>
-                      <div>
-                        <label htmlFor="star-count" className="text-sm flex justify-between font-medium"><span>Star Count</span><span>{starCount}</span></label>
-                        <input id="star-count" type="range" min="100" max="2000" step="100" value={starCount} onChange={(e) => setStarCount(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_count: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
-                      </div>
-                      <div>
-                        <label htmlFor="star-speed" className="text-sm flex justify-between font-medium"><span>Animation Speed</span><span>{(starSpeed * 10000).toFixed(1)}</span></label>
-                        <input id="star-speed" type="range" min="0.0001" max="0.001" step="0.0001" value={starSpeed} onChange={(e) => setStarSpeed(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_speed: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
-                      </div>
-                    </fieldset>
                   </div>
                 </div>
               )}

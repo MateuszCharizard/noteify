@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import * as THREE from 'three';
 
 // Stand-in for Next.js's Head component
 const Head = ({ children }) => {
@@ -50,7 +49,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
-  const backgroundRef = useRef(null);
+  // Removed animated background
 
   // Theme Management
   useEffect(() => {
@@ -76,58 +75,7 @@ export default function AuthPage() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // 3D Background Effect
-  useEffect(() => {
-    console.log('Starting Three.js setup...');
-    if (typeof window === 'undefined' || !backgroundRef.current) {
-      console.log('Skipping Three.js setup: window undefined or no backgroundRef');
-      return;
-    }
-    try {
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      backgroundRef.current.innerHTML = '';
-      backgroundRef.current.appendChild(renderer.domElement);
-      const particleMaterial = new THREE.MeshBasicMaterial({ color: theme === 'dark' ? 0x444444 : 0xbbbbbb, transparent: true, opacity: 0.5 });
-      const particleGeometry = new THREE.SphereGeometry(0.015, 8, 8);
-      const particles = new THREE.Group();
-      for (let i = 0; i < 200; i++) {
-        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        particle.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50);
-        particles.add(particle);
-      }
-      scene.add(particles);
-      camera.position.z = 10;
-      let animationFrameId;
-      const animate = () => {
-        animationFrameId = requestAnimationFrame(animate);
-        particles.rotation.y += 0.0002;
-        particleMaterial.color.set(theme === 'dark' ? 0x444444 : 0xbbbbbb);
-        renderer.render(scene, camera);
-      };
-      animate();
-      const handleResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-      };
-      window.addEventListener('resize', handleResize);
-      console.log('Three.js setup complete');
-      return () => {
-        console.log('Cleaning up Three.js');
-        window.removeEventListener('resize', handleResize);
-        cancelAnimationFrame(animationFrameId);
-        renderer.dispose();
-      };
-    } catch (error) {
-      console.error('Three.js setup error:', error.message);
-      setError('Failed to initialize background animation.');
-    }
-  }, [theme]);
+
 
   // Auth Check
   useEffect(() => {
@@ -229,7 +177,7 @@ export default function AuthPage() {
         <title>Noteify - Auth</title>
       </Head>
 
-      <div id="background" ref={backgroundRef} className="absolute inset-0 z-0"></div>
+
 
       <header className="absolute top-0 right-0 p-6 z-20">
         <button

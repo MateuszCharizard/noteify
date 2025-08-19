@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Head from 'next/head';
-import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+import { useEffect, useState } from 'react';
 
 // SVG Logo Icon from the provided theme
 const LogoIcon = (props) => (
@@ -14,7 +13,7 @@ const LogoIcon = (props) => (
 
 export default function Custom404() {
   const [theme, setTheme] = useState('light');
-  const backgroundRef = useRef(null);
+  // Removed animated background
 
   // Theme handling (simplified from provided code)
   useEffect(() => {
@@ -32,60 +31,7 @@ export default function Custom404() {
     }
   }, []);
 
-  // Animated background with Three.js (adapted from provided code)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !backgroundRef.current) return;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
 
-    backgroundRef.current.innerHTML = '';
-    backgroundRef.current.appendChild(renderer.domElement);
-
-    const stars = new THREE.Group();
-    const starGeometry = new THREE.SphereGeometry(0.05, 16, 16);
-    const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-
-    for (let i = 0; i < 500; i++) {
-      const star = new THREE.Mesh(starGeometry, starMaterial);
-      star.position.set((Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150, (Math.random() - 0.5) * 150);
-      stars.add(star);
-    }
-    scene.add(stars);
-    camera.position.z = 50;
-
-    let mouseX = 0;
-    const onMouseMove = (e) => { mouseX = e.clientX; };
-    document.addEventListener('mousemove', onMouseMove);
-
-    let animationFrameId;
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      stars.rotation.y += 0.0002;
-      const targetRotation = (mouseX / window.innerWidth - 0.5) * 0.2;
-      camera.rotation.y += (targetRotation - camera.rotation.y) * 0.02;
-      starMaterial.opacity = theme === 'dark' ? 0.7 : 0.3;
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('mousemove', onMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      renderer.dispose();
-    };
-  }, [theme]);
 
   // Theme definitions from provided code
   const themes = [
@@ -102,7 +48,7 @@ export default function Custom404() {
         <meta name="description" content="Oops! The page you're looking for doesn't exist. Return to Noteify's home, notes, or explore pages." />
       </Head>
 
-      <div ref={backgroundRef} className="fixed inset-0 -z-10" />
+
 
       <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex justify-between items-center z-20">
         <div className="flex items-center gap-3 text-[var(--color-text-primary)]">

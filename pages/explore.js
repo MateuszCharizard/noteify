@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SettingsModal from '../components/SettingsModal';
 import dynamic from 'next/dynamic';
 const ProfileBox = dynamic(() => import('../components/ProfileBox'), { ssr: false });
 import { fetchProfileById } from '../components/fetchProfile';
@@ -96,12 +97,22 @@ export default function ExplorePage() {
     }
   };
 
-  // Load theme
+  // Load and react to theme changes
   React.useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-    const themeVars = themes.find(t => t.id === savedTheme)?.vars || themes[1].vars;
-    Object.entries(themeVars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
+    const updateTheme = () => {
+      const t = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'dark';
+      setTheme(t);
+      const themeVars = themes.find(th => th.id === t)?.vars || themes[1].vars;
+      Object.entries(themeVars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
+    };
+    updateTheme();
+    window.addEventListener('storage', updateTheme);
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      window.removeEventListener('storage', updateTheme);
+      observer.disconnect();
+    };
   }, []);
 
 
@@ -366,21 +377,10 @@ export default function ExplorePage() {
             </nav>
           </div>
         </header>
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
-          <div role="dialog" className="relative z-10 bg-white/70 dark:bg-[#1e293b]/80 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-2xl shadow-2xl text-[var(--color-text-primary)] flex flex-col max-h-[90vh] backdrop-blur-2xl" style={{boxShadow:'0 8px 32px 0 rgba(31,38,135,0.25)'}}>
-            <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
-              <span className="font-semibold text-base tracking-wide">Settings</span>
-              <button onClick={() => setShowSettingsModal(false)} className="ml-auto px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1">
-              <p className="text-sm text-[var(--color-text-secondary)]">Settings modal content goes here. (You can move your settings UI here from notes.js if you want shared settings.)</p>
-            </div>
-          </div>
-        </div>
-      )}
+  {/* Settings Modal */}
+  {showSettingsModal && (
+    <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+  )}
 
         {/* Main Content */}
         <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
