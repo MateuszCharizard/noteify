@@ -11,7 +11,9 @@ import { fetchProfileById, fetchProfileByUsername } from '../components/fetchPro
 
 import { startConversation } from '../components/chatApi';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-const supabaseRealtime = createSupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const supabaseRealtime = typeof window === 'undefined'
+  ? createSupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+  : createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function MessagesPopup({ open, onClose, userId }) {
   const [conversations, setConversations] = useState2([]);
@@ -189,8 +191,8 @@ function MessagesPopup({ open, onClose, userId }) {
 }
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = typeof window === 'undefined' ? process.env.SUPABASE_URL : process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = typeof window === 'undefined' ? process.env.SUPABASE_ANON_KEY : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 function MyApp({ Component, pageProps }) {
