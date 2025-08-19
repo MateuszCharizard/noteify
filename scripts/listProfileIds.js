@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 async function listProfileIds() {
   const { data, error } = await supabase
