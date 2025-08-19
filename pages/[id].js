@@ -2,17 +2,28 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Initialize Supabase client with environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-  throw new Error('Supabase URL or Anon Key is not configured');
+// Helper to get correct env vars for Supabase
+function getSupabaseClient() {
+  if (typeof window === 'undefined') {
+    // Server-side
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables (server)');
+      throw new Error('Supabase URL or Anon Key is not configured');
+    }
+    return createClient(supabaseUrl, supabaseAnonKey);
+  } else {
+    // Client-side
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables (client)');
+      throw new Error('Supabase URL or Anon Key is not configured');
+    }
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Badge mapping for profile badges
 const badgeMap = {
@@ -38,6 +49,9 @@ export async function getServerSideProps(context) {
     console.warn('Invalid or reserved input:', id);
     return { notFound: true, props: { queriedInput: id } };
   }
+
+  // Use server-side env vars
+  const supabase = getSupabaseClient();
 
   try {
     let profileData = null;

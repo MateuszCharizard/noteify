@@ -173,7 +173,18 @@ export default function NotesPage() {
   }, [showSettingsModal, profile]);
 
   useEffect(() => {
-    setIsPublic(false);
+    // When activeNote changes, check if it's public
+    const checkPublic = async () => {
+      setIsPublic(false);
+      if (!activeNote || !activeNote.id) return;
+      const { data, error } = await supabase
+        .from('shared_notes')
+        .select('is_public')
+        .eq('note_id', activeNote.id)
+        .single();
+      if (data && data.is_public) setIsPublic(true);
+    };
+    checkPublic();
   }, [activeNote]);
 
   // --- Data & Handler Functions ---
@@ -543,6 +554,18 @@ export default function NotesPage() {
                       aria-checked={isPublic}
                       onClick={async () => {
                         const newPublic = !isPublic;
+                        // Bad words list (simple, can be expanded)
+                        const badWords = [
+                          'fuck', 'shit', 'bitch', 'asshole', 'cunt', 'nigger', 'fag', 'dick', 'cock', 'pussy', 'bastard', 'slut', 'whore', 'retard', 'faggot', 'nigga', 'twat', 'wank', 'cum', 'suck', 'rape', 'penis', 'vagina', 'anus', 'bollock', 'bugger', 'crap', 'damn', 'dyke', 'goddamn', 'hell', 'homo', 'jerk', 'motherfucker', 'prick', 'shithead', 'spastic', 'tosser', 'tit', 'arse', 'bollocks', 'shag', 'sod', 'arsehole', 'bloody', 'bollocking', 'bullshit', 'clit', 'cockhead', 'cocksucker', 'dildo', 'douche', 'dyke', 'fanny', 'flaps', 'gash', 'knob', 'minge', 'muff', 'piss', 'pissed', 'pissing', 'poop', 'queer', 'scrote', 'shag', 'shite', 'shitface', 'shitfaced', 'skank', 'slag', 'smeg', 'spunk', 'tosser', 'turd', 'twat', 'wank', 'wanker', 'waz', 'wazzer', 'wop', 'yid'
+                        ];
+                        const fieldsToCheck = [activeNote?.title, activeNote?.subject, activeNote?.content];
+                        const containsBadWord = fieldsToCheck.some(field =>
+                          typeof field === 'string' && badWords.some(bw => field.toLowerCase().includes(bw))
+                        );
+                        if (newPublic && containsBadWord) {
+                          setToastMessage('Cannot make public: note contains inappropriate language.');
+                          return;
+                        }
                         setIsPublic(newPublic);
                         if (!activeNote || !activeNote.id) return;
                         const { data: { user } } = await supabase.auth.getUser();

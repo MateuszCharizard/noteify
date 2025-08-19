@@ -268,11 +268,13 @@ function MyApp({ Component, pageProps }) {
     );
   }
 
+  // Hide DM UI on /share and / (index) routes
+  const hideDM = router.pathname === '/share' || router.pathname === '/';
   return (
     <>
       <Component {...pageProps} session={session} />
-      <DMButton onClick={() => setMessagesOpen(true)} hasNotification={hasNewMessage} />
-      <MessagesPopup open={messagesOpen} onClose={() => setMessagesOpen(false)} userId={session?.user?.id} />
+      {!hideDM && <DMButton onClick={() => setMessagesOpen(true)} hasNotification={hasNewMessage} />}
+      {!hideDM && <MessagesPopup open={messagesOpen} onClose={() => setMessagesOpen(false)} userId={session?.user?.id} />}
     </>
   );
 }

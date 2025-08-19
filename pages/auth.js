@@ -226,7 +226,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-300 flex flex-col items-center justify-center relative overflow-hidden font-sans p-4">
       <Head>
-        <title>Noteify - {isSignUp ? 'Sign Up' : 'Login'}</title>
+        <title>Noteify - Auth</title>
       </Head>
 
       <div id="background" ref={backgroundRef} className="absolute inset-0 z-0"></div>
