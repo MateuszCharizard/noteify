@@ -48,7 +48,7 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="relative bg-[var(--color-background)] rounded-2xl shadow-2xl border border-[var(--color-border)] w-80 max-w-full p-6 flex flex-col items-center text-center"
+        className="relative bg-[var(--color-background)] rounded-2xl shadow-2xl w-80 max-w-full p-6 flex flex-col items-center text-center"
         style={{ background: 'rgba(30,41,59,0.98)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -56,7 +56,7 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
         <img
           src={avatarSrc}
           alt="Profile"
-          className="w-24 h-24 rounded-full object-cover border-2 border-[var(--color-border)] mb-3"
+          className="w-24 h-24 rounded-full object-cover mb-3"
         />
         <div className="font-bold text-xl text-white flex items-center gap-2 justify-center">
           {profile.full_name || profile.username || 'User'}
@@ -78,13 +78,13 @@ export default function ProfileBox({ profile, onClose, currentUserId }) {
         </div>
         {profile.role && (
           <div className="mb-2">
-            <span className="inline-block px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold border border-yellow-400">{profile.role}</span>
+            <span className="inline-block px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold ">{profile.role}</span>
           </div>
         )}
         <div className="text-[var(--color-text-primary)] text-sm mb-2 min-h-[2rem]">{profile.bio || 'No bio yet.'}</div>
         <form className="w-full mt-2 flex gap-2" onSubmit={handleSendMessage}>
           <input
-            className="flex-1 rounded bg-black/30 border border-[var(--color-border)] px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 rounded bg-black/30 px-3 py-2 text-white placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={isSelf ? 'You cannot message yourself' : `Message @${profile.username || ''}`}
             value={message}
             onChange={e => { setMessage(e.target.value); setSent(false); setError(null); }}
