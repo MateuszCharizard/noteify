@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import Avatar from '../components/Avatar';
+import Navbar from '../components/Navbar';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
 import ReactMarkdown from 'react-markdown';
@@ -33,7 +33,7 @@ export default function SharePage() {
   const router = useRouter();
   const { id } = router.query;
   const [note, setNote] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Removed loading state for seamless transitions
   const [errorMessage, setErrorMessage] = useState(null);
   const [theme, setTheme] = useState('light');
   const backgroundRef = useRef(null);
@@ -88,7 +88,6 @@ export default function SharePage() {
     if (!router.isReady) return;
     if (!id) {
       setErrorMessage('No note ID provided.');
-      setLoading(false);
       return;
     }
     const fetchNote = async () => {
@@ -104,37 +103,15 @@ export default function SharePage() {
         if (error) throw error;
         if (!data || data.length === 0) {
           setErrorMessage('Note not found in shared_notes.');
-          setLoading(false);
           return;
         }
         setNote(data[0]);
-        setLoading(false);
       } catch (err) {
         setErrorMessage(`Error: ${err.message || 'Failed to load note.'}`);
-        setLoading(false);
       }
     };
     fetchNote();
   }, [router.isReady, id]);
-
-  // Fetch profile for account tab (if user is logged in)
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        setProfile(profileData);
-        setAccountForm({
-          full_name: profileData?.full_name || '',
-          username: profileData?.username || ''
-        });
-      } catch (e) {
-        setProfile(null);
-      }
-    };
-    if (showSettingsModal && activeSettingsTab === 'account') fetchProfile();
-  }, [showSettingsModal, activeSettingsTab]);
 
   // Toast auto-hide
   useEffect(() => {
@@ -174,6 +151,7 @@ export default function SharePage() {
     if (settings.avatar_url && profile) setProfile(p => ({...p, avatar_url: settings.avatar_url}));
     setToastMessage('Settings saved!');
   };
+
   // Fetch user settings on mount if logged in
   useEffect(() => {
     (async () => {
@@ -208,16 +186,6 @@ export default function SharePage() {
       setToastMessage('Error updating profile.');
     }
   };
-
-  // Loading spinner
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-background)] flex flex-col items-center justify-center text-[var(--color-text-primary)]">
-        <div ref={backgroundRef} className="fixed inset-0 -z-10" />
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-brand)]"></div>
-      </div>
-    );
-  }
 
   // Error state
   if (errorMessage || !note) {
@@ -339,34 +307,33 @@ export default function SharePage() {
           </div>
         </div>
       )}
-      <header className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex justify-between items-center z-20">
-        <div className="flex items-center gap-3 text-[var(--color-text-primary)]">
-          <LogoIcon className="w-9 h-9" />
-          <span className="font-semibold text-xl tracking-tight">Noteify</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            role="switch"
-            aria-checked={theme === 'dark'}
-            className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
-          >
-            <span className="sr-only">Toggle theme</span>
-            <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
+      <Navbar
+        center={null}
+        right={
+          <>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              role="switch"
+              aria-checked={theme === 'dark'}
+              className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
             >
-              {theme === 'dark' ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />}
-            </span>
-          </button>
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            aria-label="Open settings"
-            className="p-2 rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] ml-2"
-          >
-            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>
-          </button>
-        </div>
-      </header>
+              <span className="sr-only">Toggle theme</span>
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
+              >
+                {theme === 'dark' ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />}
+              </span>
+            </button>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              aria-label="Open settings"
+              className="p-2 rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] ml-2"
+            >
+              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>
+            </button>
+          </>
+        }
+      />
       <main className="w-full max-w-2xl mx-auto p-4 sm:p-8 z-10 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg border border-[var(--color-border)] mt-6 mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4 break-words" style={{color: ['sunset','forest'].includes(theme) ? '#111' : 'var(--color-text-primary)'}}>{note.title}</h1>
         <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{color: ['sunset','forest'].includes(theme) ? '#111' : 'var(--color-text-secondary)'}}>Shared by {note.owner_username}</p>

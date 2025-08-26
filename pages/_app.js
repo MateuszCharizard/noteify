@@ -27,6 +27,42 @@ function MessagesPopup({ open, onClose, userId }) {
   const [searchResult, setSearchResult] = useState2(null);
   const [searchError, setSearchError] = useState2(null);
   const [theme, setTheme] = useState2('dark');
+  const [themeLoaded, setThemeLoaded] = useState2(false);
+
+  // Theme definitions (copied from index.js)
+  const themes = [
+    { id: 'light', name: 'Light', vars: { '--color-background': '#f9fafb', '--color-bg-subtle': '#f3f4f6', '--color-bg-subtle-hover': '#e5e7eb', '--color-text-primary': '#171717', '--color-text-secondary': '#6b7280', '--color-border': '#e5e7eb', '--color-brand': '#3b82f6' } },
+    { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3a3', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
+    { id: 'sunset', name: 'Sunset', vars: { '--color-background': '#0f172a', '--color-bg-subtle': '#1e293b', '--color-bg-subtle-hover': '#334155', '--color-text-primary': '#fff8f1', '--color-text-secondary': '#ffd7b3', '--color-border': '#fb923c', '--color-brand': '#fb923c' } },
+    { id: 'forest', name: 'Forest', vars: { '--color-background': '#1a201c', '--color-bg-subtle': '#2d3831', '--color-bg-subtle-hover': '#3a4a40', '--color-text-primary': '#eaffea', '--color-text-secondary': '#b6e7b6', '--color-border': '#66bb6a', '--color-brand': '#66bb6a' } },
+  ];
+
+  // Load theme from localStorage or default
+  useEffect2(() => {
+    let loadedTheme = 'light';
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      loadedTheme = savedTheme || 'light';
+    }
+    setTheme(loadedTheme);
+    setThemeLoaded(true);
+  }, []);
+
+  // Apply theme vars when theme changes
+  useEffect2(() => {
+    if (!themeLoaded) return;
+    const selectedTheme = themes.find(t => t.id === theme) || themes[0];
+    document.documentElement.setAttribute('data-theme', selectedTheme.id);
+    Object.entries(selectedTheme.vars).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme, themeLoaded]);
   useEffect2(() => {
     const updateTheme = () => {
       const t = document.documentElement.getAttribute('data-theme') || 'dark';

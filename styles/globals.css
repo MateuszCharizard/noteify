@@ -1,1 +1,16 @@
+/* Circle checkbox for multi-select */
+.circle-checkbox span {
+	box-sizing: border-box;
+}
+.circle-checkbox input:checked + span {
+	background-color: #2563eb; /* Use a distinct blue for selection, not theme color */
+	border-color: #2563eb;
+}
+/* Ellipsis for note titles in sidebar */
+.note-title-wrap {
+	max-width: 140px;
+	word-break: break-word;
+	white-space: normal;
+	display: block;
+}
 @import "tailwindcss";

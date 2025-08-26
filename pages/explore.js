@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import SettingsModal from '../components/SettingsModal';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Navbar from '../components/Navbar';
 const ProfileBox = dynamic(() => import('../components/ProfileBox'), { ssr: false });
 import { fetchProfileById } from '../components/fetchProfile';
 import { createClient } from '@supabase/supabase-js';
@@ -62,7 +62,7 @@ const CommentIcon = ({ className }) => (
 // Themes
 const themes = [
   { id: 'light', name: 'Light', vars: { '--color-background': '#f9fafb', '--color-bg-sidebar': 'rgba(249, 250, 251, 0.8)', '--color-bg-subtle': '#f3f4f6', '--color-bg-subtle-hover': '#e5e7eb', '--color-text-primary': '#171717', '--color-text-secondary': '#6b7280', '--color-border': '#e5e7eb', '--color-brand': '#3b82f6' } },
-  { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-sidebar': 'rgba(10, 10, 10, 0.8)', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3a3', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
+  { id: 'dark', name: 'Dark', vars: { '--color-background': '#0a0a0a', '--color-bg-sidebar': 'rgba(10, 10, 10, 0.8)', '--color-bg-subtle': '#171717', '--color-bg-subtle-hover': '#262626', '--color-text-primary': '#f5f5f5', '--color-text-secondary': '#a3a3b8', '--color-border': '#262626', '--color-brand': '#3b82f6' } },
   { id: 'sunset', name: 'Sunset', vars: { '--color-background': '#0f172a', '--color-bg-sidebar': 'rgba(15, 23, 42, 0.8)', '--color-bg-subtle': '#1e293b', '--color-bg-subtle-hover': '#334155', '--color-text-primary': '#f1f5f9', '--color-text-secondary': '#94a3b8', '--color-border': '#334155', '--color-brand': '#fb923c' } },
   { id: 'forest', name: 'Forest', vars: { '--color-background': '#1a201c', '--color-bg-sidebar': 'rgba(26, 32, 28, 0.8)', '--color-bg-subtle': '#2d3831', '--color-bg-subtle-hover': '#3a4a40', '--color-text-primary': '#e8f5e9', '--color-text-secondary': '#a5d6a7', '--color-border': '#3a4a40', '--color-brand': '#66bb6a' } },
 ];
@@ -80,10 +80,65 @@ export default function ExplorePage() {
   const [showComments, setShowComments] = useState({});
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState('dark');
+  const [themeLoaded, setThemeLoaded] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [profilePopup, setProfilePopup] = useState({ open: false, profile: null, loading: false, error: null });
+  const [showEmptySkeleton, setShowEmptySkeleton] = useState(true); // default true for initial mount
+
+  // Unified theme loading logic
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      let loadedTheme = 'dark';
+      if (user) {
+        const { data: settings } = await supabase.from('user_settings').select('theme').eq('id', user.id).single();
+        if (settings) {
+          loadedTheme = settings.theme || 'dark';
+        }
+      } else {
+        const savedTheme = localStorage.getItem('theme');
+        loadedTheme = savedTheme || 'dark';
+      }
+      setTheme(loadedTheme);
+      setThemeLoaded(true);
+      localStorage.setItem('theme', loadedTheme);
+    })();
+  }, []);
+
+  // Save theme to Supabase and localStorage when changed
+  useEffect(() => {
+    if (!themeLoaded) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('user_settings').upsert({
+          id: user.id,
+          theme,
+          updated_at: new Date().toISOString()
+        });
+        if (error) {
+          setToastMessage('Error saving settings: ' + error.message);
+        }
+      }
+      localStorage.setItem('theme', theme);
+    })();
+  }, [theme, themeLoaded]);
+
+  // Apply theme vars when theme changes
+  useEffect(() => {
+    if (!themeLoaded) return;
+    const selectedTheme = themes.find(t => t.id === theme) || themes[1];
+    document.documentElement.setAttribute('data-theme', selectedTheme.id);
+    Object.entries(selectedTheme.vars).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme, themeLoaded]);
 
   // Show profile popup for a username
   const handleShowProfile = async (userId) => {
@@ -96,26 +151,6 @@ export default function ExplorePage() {
       setProfilePopup({ open: true, profile: null, loading: false, error: 'Profile not found' });
     }
   };
-
-  // Load and react to theme changes
-  React.useEffect(() => {
-    const updateTheme = () => {
-      const t = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'dark';
-      setTheme(t);
-      const themeVars = themes.find(th => th.id === t)?.vars || themes[1].vars;
-      Object.entries(themeVars).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
-    };
-    updateTheme();
-    window.addEventListener('storage', updateTheme);
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => {
-      window.removeEventListener('storage', updateTheme);
-      observer.disconnect();
-    };
-  }, []);
-
-
 
   // Toggle comments visibility
   const toggleComments = (noteId) => {
@@ -200,12 +235,9 @@ export default function ExplorePage() {
         }, {});
         setSavedNotes(savedByNote);
       }
-
-      setLoading(false);
     } catch (err) {
       console.error('Error loading data:', err);
       setToastMessage('Error loading notes: ' + err.message);
-      setLoading(false);
     }
   };
 
@@ -348,107 +380,138 @@ export default function ExplorePage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Skeleton loader for lazy loading empty state messages
+  function EmptyStateSkeleton({ lines = 2 }) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 animate-pulse py-8 sm:py-10">
+        <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gray-200 dark:bg-gray-700 mb-2" />
+        {[...Array(lines)].map((_, i) => (
+          <div key={i} className="h-4 w-40 sm:w-64 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
+        ))}
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    if (notes.length === 0) {
+      setShowEmptySkeleton(true);
+      const t = setTimeout(() => setShowEmptySkeleton(false), 700);
+      return () => clearTimeout(t);
+    } else {
+      setShowEmptySkeleton(false);
+    }
+  }, [notes.length]);
+
   return (
     <>
       <Head>
         <title>Explore | NoteShare</title>
       </Head>
+      <Navbar />
       <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] flex flex-col">
-        {/* Header */}
-        <header className="bg-[var(--color-bg-sidebar)] backdrop-blur-sm border-b border-[var(--color-border)] sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 group" title="Home">
-              <BoxIcon className="w-6 h-6 text-[var(--color-brand)] group-hover:scale-110 transition-transform" />
-              <span className="text-lg sm:text-xl font-bold">Noteify</span>
-            </Link>
-            <nav className="flex items-center space-x-2 sm:space-x-4">
-              <Link href="/notes" className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors flex items-center gap-1" title="Back to Notes">
-                <FileTextIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="hidden sm:inline font-semibold">Back to Notes</span>
-              </Link>
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors"
-                title="Settings"
-                aria-label="Settings"
-              >
-                <CogIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-            </nav>
-          </div>
-        </header>
-  {/* Settings Modal */}
-  {showSettingsModal && (
-    <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
-  )}
-
-        {/* Main Content */}
-        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Explore Public Notes</h1>
-            <button
-              onClick={loadData}
-              className="px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
-              aria-label="Refresh notes"
+        {/* Settings Modal */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
+            <div
+              role="dialog"
+              className={`relative z-10 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl ${theme === 'dark' ? 'bg-[#1e293b]/90' : 'bg-white/95'}`}
+              style={{ boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)', color: theme === 'dark' ? '#fff' : '#111' }}
             >
-              Refresh Notes
+              <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
+                <span className="text-lg font-semibold">Personalisation</span>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <div className="space-y-10">
+                  <div>
+                    <h3 className="font-semibold text-base mb-4 tracking-wide">Color Theme</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {themes.map(t => {
+                        const isDarkPreview = ['sunset', 'forest'].includes(t.id);
+                        return (
+                          <div key={t.id} className="flex flex-col items-center">
+                            <button
+                              onClick={() => setTheme(t.id)}
+                              className={`w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center shadow-md ${theme === t.id ? 'border-[var(--color-brand)] scale-105 ring-2 ring-[var(--color-brand)]' : 'border-[var(--color-border)] hover:scale-105'}`}
+                              style={{
+                                background: isDarkPreview ? 'rgba(30,41,59,0.85)' : t.vars['--color-background'],
+                                color: theme === 'dark' ? '#fff' : '#111'
+                              }}
+                            >
+                              <span className="block w-7 h-7 sm:w-10 sm:h-10 rounded-full" style={{ background: t.vars['--color-brand'] }}></span>
+                            </button>
+                            <p className="text-center text-xs sm:text-sm mt-2 font-medium opacity-80" style={{ color: theme === 'dark' ? '#fff' : '#111' }}>{t.name}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-[var(--color-border)] flex-shrink-0 flex justify-end items-center gap-4">
+                <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Main Content */}
+        <main className="mt-12 flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Public Notes</h1>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors"
+              title="Settings"
+              aria-label="Settings"
+            >
+              <CogIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
-          {loading ? (
-            <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-[var(--color-brand)]"></div>
-            </div>
-          ) : notes.length === 0 ? (
-            <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-              <p className="text-lg sm:text-xl text-[var(--color-text-secondary)]">No public notes found.</p>
-            </div>
-          ) : (
-            <div className="space-y-6 sm:space-y-8">
-              {notes.map((note) => (
+          <div className="space-y-6 sm:space-y-8 min-h-[60vh] flex flex-col justify-start">
+            {notes.length === 0 ? (
+              showEmptySkeleton ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <EmptyStateSkeleton lines={1} />
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-lg sm:text-xl text-[var(--color-text-secondary)]">No public notes found.</p>
+                </div>
+              )
+            ) : (
+              notes.map((note) => (
                 <div key={note.note_id} className="bg-[var(--color-bg-subtle)] rounded-lg shadow-lg p-4 sm:p-6">
                   <div className="mb-4">
                     <Link href={`/share?id=${note.id}`}>
                       <h2 className="text-lg sm:text-xl font-semibold hover:text-[var(--color-brand)] transition-colors">{note.title}</h2>
                     </Link>
                     <p className="text-sm sm:text-base text-[var(--color-text-secondary)] mt-1">
-                      By <button
+                      By{' '}
+                      <button
                         className="font-semibold hover:underline text-[var(--color-brand)] focus:outline-none"
                         onClick={() => handleShowProfile(note.user_id)}
                         type="button"
                       >
                         {note.username || 'Anonymous'}
-                      </button> • {new Date(note.created_at).toLocaleDateString()}
+                      </button>{' '}
+                      • {new Date(note.created_at).toLocaleDateString()}
                     </p>
-      {/* Profile Popup */}
-      {profilePopup.open && (
-        <>
-          {profilePopup.loading ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-              <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">Loading...</div>
-            </div>
-          ) : profilePopup.profile ? (
-            <ProfileBox profile={profilePopup.profile} onClose={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })} currentUserId={user?.id} />
-          ) : (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}>
-              <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">{profilePopup.error || 'Profile not found'}</div>
-            </div>
-          )}
-        </>
-      )}
                   </div>
                   <div className="prose prose-sm sm:prose-base max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-0 prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.content.slice(0, 200) + (note.content.length > 200 ? '...' : '')}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {note.content.slice(0, 200) + (note.content.length > 200 ? '...' : '')}
+                    </ReactMarkdown>
                   </div>
                   <div className="flex items-center space-x-4 mt-4">
                     <button
                       onClick={() => handleLike(note.note_id)}
                       className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors"
-                      title={user && likes[note.note_id]?.find(l => l.user_id === user.id) ? 'Unlike' : 'Like'}
-                      aria-label={user && likes[note.note_id]?.find(l => l.user_id === user.id) ? 'Unlike' : 'Like'}
+                      title={user && likes[note.note_id]?.find((l) => l.user_id === user.id) ? 'Unlike' : 'Like'}
+                      aria-label={user && likes[note.note_id]?.find((l) => l.user_id === user.id) ? 'Unlike' : 'Like'}
                     >
                       <HeartIcon
                         className="w-5 h-5 sm:w-6 sm:h-6"
-                        filled={user && likes[note.note_id]?.find(l => l.user_id === user.id)}
+                        filled={user && likes[note.note_id]?.find((l) => l.user_id === user.id)}
                       />
                       <span>{likes[note.note_id]?.length || 0}</span>
                     </button>
@@ -523,18 +586,41 @@ export default function ExplorePage() {
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+            {/* Profile Popup */}
+            {profilePopup.open && (
+              <>
+                {profilePopup.loading ? (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">Loading...</div>
+                  </div>
+                ) : profilePopup.profile ? (
+                  <ProfileBox
+                    profile={profilePopup.profile}
+                    onClose={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}
+                    currentUserId={user?.id}
+                  />
+                ) : (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                    onClick={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}
+                  >
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">
+                      {profilePopup.error || 'Profile not found'}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </main>
-
         {/* Footer */}
         <footer className="bg-[var(--color-bg-sidebar)] border-t border-[var(--color-border)] py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm sm:text-base text-[var(--color-text-secondary)]">
             Powered by <a href="https://x.ai" target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">xAI</a>
           </div>
         </footer>
-
         {/* Toast */}
         {toastMessage && (
           <div className="fixed bottom-4 right-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] px-4 py-2 rounded-md shadow-lg text-sm sm:text-base">

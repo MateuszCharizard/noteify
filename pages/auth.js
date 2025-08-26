@@ -49,6 +49,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   // Removed animated background
 
   // Theme Management
@@ -124,27 +125,13 @@ export default function AuthPage() {
           }
         });
         if (error) throw error;
-        // Get the user id from the session (if available)
-        let userId = data?.user?.id;
-        // If not available, try to sign in to get the user id
-        if (!userId) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInError) {
-            alert('Check your email for the confirmation link!');
-            return;
-          }
-          userId = signInData?.user?.id;
-        }
-        // Insert into profiles table
-        if (userId) {
-          await supabase.from('profiles').upsert({
-            id: userId,
-            username,
-            full_name: fullName,
-            email
-          });
-        }
-        window.location.href = '/notes';
+        setIsSignUp(false);
+        setShowConfirmPopup(true);
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        setFullName("");
+        return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -200,6 +187,16 @@ export default function AuthPage() {
         </button>
       </header>
 
+      {showConfirmPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-xl p-6 max-w-xs w-full flex flex-col items-center">
+            <span className="text-3xl mb-2">📧</span>
+            <h2 className="text-lg font-bold mb-2 text-center">Check your email</h2>
+            <p className="text-sm text-[var(--color-text-secondary)] text-center mb-4">We've sent a confirmation link to your email. Please confirm your account to log in.</p>
+            <button onClick={() => setShowConfirmPopup(false)} className="mt-2 px-4 py-2 rounded bg-[var(--color-brand)] text-white font-semibold">OK</button>
+          </div>
+        </div>
+      )}
       <main className="w-full max-w-md mx-auto p-8 z-10 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg border border-[var(--color-border)]">
         <div className="text-center mb-8">
           <LogoIcon className="mx-auto h-12 w-12 text-[var(--color-brand)]" />
