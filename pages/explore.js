@@ -36,13 +36,6 @@ const FileTextIcon = ({ className }) => (
     <line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
   </svg>
 );
-const CogIcon = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
-    <path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path>
-    <path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path>
-  </svg>
-);
 const HeartIcon = ({ className, filled }) => (
   <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -81,10 +74,9 @@ export default function ExplorePage() {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState('dark');
   const [themeLoaded, setThemeLoaded] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [profilePopup, setProfilePopup] = useState({ open: false, profile: null, loading: false, error: null });
-  const [showEmptySkeleton, setShowEmptySkeleton] = useState(true); // default true for initial mount
+  const [showEmptySkeleton, setShowEmptySkeleton] = useState(true);
 
   // Unified theme loading logic
   useEffect(() => {
@@ -105,25 +97,6 @@ export default function ExplorePage() {
       localStorage.setItem('theme', loadedTheme);
     })();
   }, []);
-
-  // Save theme to Supabase and localStorage when changed
-  useEffect(() => {
-    if (!themeLoaded) return;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase.from('user_settings').upsert({
-          id: user.id,
-          theme,
-          updated_at: new Date().toISOString()
-        });
-        if (error) {
-          setToastMessage('Error saving settings: ' + error.message);
-        }
-      }
-      localStorage.setItem('theme', theme);
-    })();
-  }, [theme, themeLoaded]);
 
   // Apply theme vars when theme changes
   useEffect(() => {
@@ -409,63 +382,16 @@ export default function ExplorePage() {
       </Head>
       <Navbar />
       <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] flex flex-col">
-        {/* Settings Modal */}
-        {showSettingsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
-            <div
-              role="dialog"
-              className={`relative z-10 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl ${theme === 'dark' ? 'bg-[#1e293b]/90' : 'bg-white/95'}`}
-              style={{ boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)', color: theme === 'dark' ? '#fff' : '#111' }}
-            >
-              <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
-                <span className="text-lg font-semibold">Personalisation</span>
-              </div>
-              <div className="p-6 overflow-y-auto flex-1">
-                <div className="space-y-10">
-                  <div>
-                    <h3 className="font-semibold text-base mb-4 tracking-wide">Color Theme</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {themes.map(t => {
-                        const isDarkPreview = ['sunset', 'forest'].includes(t.id);
-                        return (
-                          <div key={t.id} className="flex flex-col items-center">
-                            <button
-                              onClick={() => setTheme(t.id)}
-                              className={`w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center shadow-md ${theme === t.id ? 'border-[var(--color-brand)] scale-105 ring-2 ring-[var(--color-brand)]' : 'border-[var(--color-border)] hover:scale-105'}`}
-                              style={{
-                                background: isDarkPreview ? 'rgba(30,41,59,0.85)' : t.vars['--color-background'],
-                                color: theme === 'dark' ? '#fff' : '#111'
-                              }}
-                            >
-                              <span className="block w-7 h-7 sm:w-10 sm:h-10 rounded-full" style={{ background: t.vars['--color-brand'] }}></span>
-                            </button>
-                            <p className="text-center text-xs sm:text-sm mt-2 font-medium opacity-80" style={{ color: theme === 'dark' ? '#fff' : '#111' }}>{t.name}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 border-t border-[var(--color-border)] flex-shrink-0 flex justify-end items-center gap-4">
-                <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
-              </div>
-            </div>
-          </div>
-        )}
         {/* Main Content */}
         <main className="mt-12 flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
           <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Public Notes</h1>
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="p-2 rounded-md hover:bg-[var(--color-bg-subtle-hover)] transition-colors"
-              title="Settings"
-              aria-label="Settings"
-            >
-              <CogIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              {['Public', 'Notes'].map((word, i) => (
+                <span key={i} className="inline-block" style={{ animationDelay: `${0.1 + 0.1 * (i + 1)}s` }}>
+                  {word}&nbsp;
+                </span>
+              ))}
+            </h1>
           </div>
           <div className="space-y-6 sm:space-y-8 min-h-[60vh] flex flex-col justify-start">
             {notes.length === 0 ? (
@@ -474,18 +400,28 @@ export default function ExplorePage() {
                   <EmptyStateSkeleton lines={1} />
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
                   <p className="text-lg sm:text-xl text-[var(--color-text-secondary)]">No public notes found.</p>
                 </div>
               )
             ) : (
-              notes.map((note) => (
-                <div key={note.note_id} className="bg-[var(--color-bg-subtle)] rounded-lg shadow-lg p-4 sm:p-6">
+              notes.map((note, index) => (
+                <div
+                  key={note.note_id}
+                  className="bg-[var(--color-bg-subtle)] rounded-lg shadow-lg p-4 sm:p-6 animate-scale-in-up"
+                  style={{
+                    animationDelay: `${0.5 + 0.2 * (index + 1)}s`,
+                    transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+                    transition: 'transform 400ms cubic-bezier(0.03, 0.98, 0.52, 0.99)'
+                  }}
+                >
                   <div className="mb-4">
                     <Link href={`/share?id=${note.id}`}>
-                      <h2 className="text-lg sm:text-xl font-semibold hover:text-[var(--color-brand)] transition-colors">{note.title}</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold hover:text-[var(--color-brand)] transition-colors animate-fade-in-up" style={{ animationDelay: `${0.6 + 0.2 * (index + 1)}s` }}>
+                        {note.title}
+                      </h2>
                     </Link>
-                    <p className="text-sm sm:text-base text-[var(--color-text-secondary)] mt-1">
+                    <p className="text-sm sm:text-base text-[var(--color-text-secondary)] mt-1 animate-fade-in-up" style={{ animationDelay: `${0.7 + 0.2 * (index + 1)}s` }}>
                       By{' '}
                       <button
                         className="font-semibold hover:underline text-[var(--color-brand)] focus:outline-none"
@@ -497,7 +433,10 @@ export default function ExplorePage() {
                       • {new Date(note.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="prose prose-sm sm:prose-base max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-0 prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)]">
+                  <div
+                    className="prose prose-sm sm:prose-base max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-0 prose-headings:text-[var(--color-text-primary)] prose-p:text-[var(--color-text-primary)] prose-strong:text-[var(--color-text-primary)] prose-a:text-[var(--color-brand)] prose-blockquote:text-[var(--color-text-secondary)] prose-code:text-[var(--color-text-primary)] prose-li:text-[var(--color-text-primary)] animate-fade-in-up"
+                    style={{ animationDelay: `${0.8 + 0.2 * (index + 1)}s` }}
+                  >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {note.content.slice(0, 200) + (note.content.length > 200 ? '...' : '')}
                     </ReactMarkdown>
@@ -505,9 +444,10 @@ export default function ExplorePage() {
                   <div className="flex items-center space-x-4 mt-4">
                     <button
                       onClick={() => handleLike(note.note_id)}
-                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors"
+                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors animate-scale-in"
                       title={user && likes[note.note_id]?.find((l) => l.user_id === user.id) ? 'Unlike' : 'Like'}
                       aria-label={user && likes[note.note_id]?.find((l) => l.user_id === user.id) ? 'Unlike' : 'Like'}
+                      style={{ animationDelay: `${0.9 + 0.2 * (index + 1)}s` }}
                     >
                       <HeartIcon
                         className="w-5 h-5 sm:w-6 sm:h-6"
@@ -520,18 +460,20 @@ export default function ExplorePage() {
                         setShowComments((prev) => ({ ...prev, [note.note_id]: true }));
                         setTimeout(() => document.getElementById(`comment-input-${note.note_id}`).focus(), 0);
                       }}
-                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors"
+                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors animate-scale-in"
                       title="Comment"
                       aria-label="Comment"
+                      style={{ animationDelay: `${1.0 + 0.2 * (index + 1)}s` }}
                     >
                       <CommentIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                       <span>{comments[note.note_id]?.length || 0}</span>
                     </button>
                     <button
                       onClick={() => handleSave(note.note_id)}
-                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors"
+                      className="flex items-center space-x-1 text-sm sm:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-brand)] transition-colors animate-scale-in"
                       title={user && savedNotes[note.note_id] ? 'Unsave' : 'Save'}
                       aria-label={user && savedNotes[note.note_id] ? 'Unsave' : 'Save'}
+                      style={{ animationDelay: `${1.1 + 0.2 * (index + 1)}s` }}
                     >
                       <BookmarkIcon
                         className="w-5 h-5 sm:w-6 sm:h-6"
@@ -541,7 +483,7 @@ export default function ExplorePage() {
                     </button>
                   </div>
                   <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 animate-fade-in-up" style={{ animationDelay: `${1.2 + 0.2 * (index + 1)}s` }}>
                       <h3 className="text-base sm:text-lg font-semibold">Comments</h3>
                       <button
                         onClick={() => toggleComments(note.note_id)}
@@ -554,8 +496,12 @@ export default function ExplorePage() {
                     {showComments[note.note_id] && (
                       <>
                         {comments[note.note_id]?.length > 0 ? (
-                          comments[note.note_id].map((comment) => (
-                            <div key={comment.id} className="bg-[var(--color-background)] rounded-md p-3 sm:p-4 mb-2">
+                          comments[note.note_id].map((comment, cIndex) => (
+                            <div
+                              key={comment.id}
+                              className="bg-[var(--color-background)] rounded-md p-3 sm:p-4 mb-2 animate-scale-in-up"
+                              style={{ animationDelay: `${1.3 + 0.2 * (index + 1) + 0.1 * (cIndex + 1)}s` }}
+                            >
                               <p className="text-sm sm:text-base">{comment.content}</p>
                               <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] mt-1">
                                 By {comment.user_id === user?.id ? 'You' : 'User'} • {new Date(comment.created_at).toLocaleString()}
@@ -563,9 +509,11 @@ export default function ExplorePage() {
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm sm:text-base text-[var(--color-text-secondary)]">No comments yet.</p>
+                          <p className="text-sm sm:text-base text-[var(--color-text-secondary)] animate-fade-in-up" style={{ animationDelay: `${1.3 + 0.2 * (index + 1)}s` }}>
+                            No comments yet.
+                          </p>
                         )}
-                        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 animate-fade-in-up" style={{ animationDelay: `${1.4 + 0.2 * (index + 1)}s` }}>
                           <textarea
                             id={`comment-input-${note.note_id}`}
                             value={newComments[note.note_id] || ''}
@@ -576,8 +524,9 @@ export default function ExplorePage() {
                           />
                           <button
                             onClick={() => handleComment(note.note_id)}
-                            className="px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors"
+                            className="px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base font-semibold rounded-md bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-hover)] transition-colors animate-scale-in"
                             aria-label="Post comment"
+                            style={{ animationDelay: `${1.5 + 0.2 * (index + 1)}s` }}
                           >
                             Post
                           </button>
@@ -592,8 +541,10 @@ export default function ExplorePage() {
             {profilePopup.open && (
               <>
                 {profilePopup.loading ? (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">Loading...</div>
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in" style={{ animationDelay: '0s' }}>
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)] animate-scale-in-up" style={{ animationDelay: '0.1s' }}>
+                      Loading...
+                    </div>
                   </div>
                 ) : profilePopup.profile ? (
                   <ProfileBox
@@ -603,10 +554,11 @@ export default function ExplorePage() {
                   />
                 ) : (
                   <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in"
                     onClick={() => setProfilePopup({ open: false, profile: null, loading: false, error: null })}
+                    style={{ animationDelay: '0s' }}
                   >
-                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)]">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl p-8 text-center text-lg font-semibold text-[var(--color-text-primary)] animate-scale-in-up" style={{ animationDelay: '0.1s' }}>
                       {profilePopup.error || 'Profile not found'}
                     </div>
                   </div>
@@ -615,19 +567,63 @@ export default function ExplorePage() {
             )}
           </div>
         </main>
-        {/* Footer */}
-        <footer className="bg-[var(--color-bg-sidebar)] border-t border-[var(--color-border)] py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm sm:text-base text-[var(--color-text-secondary)]">
-            Powered by <a href="https://x.ai" target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">xAI</a>
-          </div>
-        </footer>
         {/* Toast */}
         {toastMessage && (
-          <div className="fixed bottom-4 right-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] px-4 py-2 rounded-md shadow-lg text-sm sm:text-base">
+          <div className="fixed bottom-4 right-4 bg-[var(--color-bg-subtle)] text-[var(--color-text-primary)] px-4 py-2 rounded-md shadow-lg text-sm sm:text-base animate-scale-in" style={{ animationDelay: '0s' }}>
             {toastMessage}
           </div>
         )}
       </div>
+      <style jsx global>{`
+        :root {
+          --color-background: #f9fafb;
+          --color-bg-sidebar: rgba(249, 250, 251, 0.8);
+          --color-bg-subtle: #f3f4f6;
+          --color-bg-subtle-hover: #e5e7eb;
+          --color-text-primary: #171717;
+          --color-text-secondary: #6b7280;
+          --color-border: #e5e7eb;
+          --color-brand: #3b82f6;
+          --color-brand-hover: #2563eb;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        .dark {
+          --color-background: #0a0a0a;
+          --color-bg-sidebar: rgba(10, 10, 10, 0.8);
+          --color-bg-subtle: #171717;
+          --color-bg-subtle-hover: #262626;
+          --color-text-primary: #f5f5f5;
+          --color-text-secondary: #a3a3b8;
+          --color-border: #262626;
+          --color-brand: #3b82f6;
+          --color-brand-hover: #60a5fa;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scale-in {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes scale-in-up {
+          from { opacity: 0; transform: perspective(1000px) rotateX(10deg) rotateY(10deg) scale3d(0.8, 0.8, 0.8); }
+          to { opacity: 1; transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1); }
+        }
+        .animate-fade-in {
+          animation: fade-in-up 0.6s ease-out forwards;
+          opacity: 0;
+        }
+        .animate-scale-in {
+          animation: scale-in 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
+        }
+        .animate-scale-in-up {
+          animation: scale-in-up 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
+        }
+      `}</style>
     </>
   );
 }

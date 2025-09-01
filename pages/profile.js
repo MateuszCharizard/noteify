@@ -65,7 +65,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export default function ProfilePage() {
   const [theme, setTheme] = useState('light');
   const [profile, setProfile] = useState(null);
-  // Removed loading state for seamless transitions
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [updateMessage, setUpdateMessage] = useState({ text: '', type: 'success' });
@@ -109,7 +108,6 @@ export default function ProfilePage() {
           setUpdateMessage({ text: 'Welcome! Please complete your profile.', type: 'success' });
         }
       }
-  // setLoading(false); // Removed for seamless transitions
     };
     fetchProfile();
   }, []);
@@ -187,13 +185,18 @@ export default function ProfilePage() {
       </Head>
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       <header className="w-full max-w-7xl mx-auto px-6 py-4 flex justify-between items-center z-20">
-        <Link href="/" className="px-4 py-2 text-sm font-semibold rounded-lg bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors">
+        <Link
+          href="/"
+          className="px-4 py-2 text-sm font-semibold rounded-lg bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors animate-scale-in"
+          style={{ animationDelay: '0.1s' }}
+        >
           Home
         </Link>
         <div className="flex items-center gap-4">
           <button
             onClick={handleSignOut}
-            className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors animate-fade-in"
+            style={{ animationDelay: '0.3s' }}
           >
             Sign Out
           </button>
@@ -201,11 +204,14 @@ export default function ProfilePage() {
       </header>
       <main className="relative z-10 flex flex-col items-center justify-center w-full p-4 flex-grow">
         <div
-          className="w-full max-w-lg backdrop-blur-md rounded-2xl shadow-lg p-8 border border-[var(--color-border)]"
+          className="w-full max-w-lg backdrop-blur-md rounded-2xl shadow-lg p-8 border border-[var(--color-border)] animate-scale-in-up"
           style={{
             background: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
               ? 'rgba(10,10,10,0.8)'
               : 'rgba(255,255,255,0.85)',
+            animationDelay: '0.5s',
+            transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+            transition: 'transform 400ms cubic-bezier(0.03, 0.98, 0.52, 0.99)'
           }}
         >
           {skeletonLoading ? (
@@ -221,7 +227,10 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="flex flex-col items-center mb-6">
-              <label className="relative w-32 h-32 rounded-full cursor-pointer group flex items-center justify-center mb-4">
+              <label
+                className="relative w-32 h-32 rounded-full cursor-pointer group flex items-center justify-center mb-4 animate-scale-in"
+                style={{ animationDelay: '0.7s' }}
+              >
                 <input
                   type="file"
                   accept="image/png, image/jpeg"
@@ -236,8 +245,12 @@ export default function ProfilePage() {
                   <CameraIcon />
                 </div>
               </label>
-              <h1 className="text-3xl font-bold">{fullName || username || 'New User'}</h1>
-              <p className="text-[var(--color-text-secondary)]">@{username || 'username'}</p>
+              <h1 className="text-3xl font-bold animate-fade-in-up" style={{ animationDelay: '0.9s' }}>
+                {fullName || username || 'New User'}
+              </h1>
+              <p className="text-[var(--color-text-secondary)] animate-fade-in-up" style={{ animationDelay: '1s' }}>
+                @{username || 'username'}
+              </p>
               {/* Badges Row */}
               {profile?.badges && (
                 <div className="flex flex-wrap gap-2 mt-2 justify-center">
@@ -252,22 +265,21 @@ export default function ProfilePage() {
                     let badgeList = Array.isArray(profile.badges)
                       ? profile.badges
                       : (profile.badges || '').split(',').map((b) => b.trim()).filter(Boolean);
-                    return badgeList.map(
-                      (badge) =>
-                        badgeMap[badge] && (
-                          <span key={badge} className="relative group">
-                            <img
-                              src={badgeMap[badge].img}
-                              alt={badgeMap[badge].label}
-                              loading="lazy"
-                              className="w-8 h-8 rounded-md hover:scale-110 transition-transform"
-                              style={{ background: 'transparent' }}
-                            />
-                            <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 text-xs rounded bg-black text-white whitespace-nowrap z-20 ">
-                              {badgeMap[badge].label}
-                            </span>
+                    return badgeList.map((badge, i) =>
+                      badgeMap[badge] && (
+                        <span key={badge} className="relative group animate-scale-in" style={{ animationDelay: `${1.1 + 0.1 * (i + 1)}s` }}>
+                          <img
+                            src={badgeMap[badge].img}
+                            alt={badgeMap[badge].label}
+                            loading="lazy"
+                            className="w-8 h-8 rounded-md hover:scale-110 transition-transform"
+                            style={{ background: 'transparent' }}
+                          />
+                          <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 text-xs rounded bg-black text-white whitespace-nowrap z-20">
+                            {badgeMap[badge].label}
                           </span>
-                        )
+                        </span>
+                      )
                     );
                   })()}
                 </div>
@@ -275,14 +287,17 @@ export default function ProfilePage() {
             </div>
           )}
           {updateMessage.text && (
-            <p className={`text-center mb-4 text-sm ${updateMessage.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+            <p
+              className={`text-center mb-4 text-sm ${updateMessage.type === 'error' ? 'text-red-500' : 'text-green-500'} animate-fade-in`}
+              style={{ animationDelay: '1.3s' }}
+            >
               {updateMessage.text}
             </p>
           )}
           {isEditing ? (
             <form onSubmit={handleProfileUpdate} className="space-y-4">
-              {['Full Name', 'Username', 'Bio'].map((field) => (
-                <div key={field}>
+              {['Full Name', 'Username', 'Bio'].map((field, i) => (
+                <div key={field} className="animate-fade-in-up" style={{ animationDelay: `${1.4 + 0.2 * (i + 1)}s` }}>
                   <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">{field}</label>
                   {field === 'Bio' ? (
                     <textarea
@@ -306,14 +321,16 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => setIsEditing(false)}
                   disabled={isSubmitting}
-                  className="w-full px-6 py-2 bg-[var(--color-bg-subtle)] rounded-full font-semibold hover:bg-[var(--color-bg-subtle-hover)] transition-colors disabled:opacity-50"
+                  className="w-full px-6 py-2 bg-[var(--color-bg-subtle)] rounded-full font-semibold hover:bg-[var(--color-bg-subtle-hover)] transition-colors disabled:opacity-50 animate-scale-in"
+                  style={{ animationDelay: '2s' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full px-6 py-2 bg-[var(--color-brand)] text-white rounded-full font-semibold hover:bg-[var(--color-brand-hover)] transition-colors disabled:opacity-50 flex items-center justify-center"
+                  className="w-full px-6 py-2 bg-[var(--color-brand)] text-white rounded-full font-semibold hover:bg-[var(--color-brand-hover)] transition-colors disabled:opacity-50 flex items-center justify-center animate-scale-in"
+                  style={{ animationDelay: '2.2s' }}
                 >
                   {isSubmitting ? <SpinnerIcon className="w-5 h-5" /> : 'Save'}
                 </button>
@@ -321,11 +338,16 @@ export default function ProfilePage() {
             </form>
           ) : (
             <div className="text-center space-y-4">
-              <p className="text-[var(--color-text-primary)] min-h-[4rem]">{bio || 'No bio yet. Click Edit to add one!'}</p>
-              <p className="text-sm text-[var(--color-text-secondary)]">Email: {profile?.email}</p>
+              <p className="text-[var(--color-text-primary)] min-h-[4rem] animate-fade-in-up" style={{ animationDelay: '1.4s' }}>
+                {bio || 'No bio yet. Click Edit to add one!'}
+              </p>
+              <p className="text-sm text-[var(--color-text-secondary)] animate-fade-in-up" style={{ animationDelay: '1.6s' }}>
+                Email: {profile?.email}
+              </p>
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full px-6 py-3 bg-[var(--color-bg-subtle)] rounded-full font-semibold hover:bg-[var(--color-bg-subtle-hover)] transition-colors"
+                className="w-full px-6 py-3 bg-[var(--color-bg-subtle)] rounded-full font-semibold hover:bg-[var(--color-bg-subtle-hover)] transition-colors animate-scale-in"
+                style={{ animationDelay: '1.8s' }}
               >
                 Edit Profile
               </button>
@@ -346,6 +368,7 @@ export default function ProfilePage() {
           --color-brand-hover: #2563eb;
           --color-switch-track: #fcd34d;
           --color-switch-icon: #f59e0b;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
         }
         .dark {
           --color-background: #0a0a0a;
@@ -359,9 +382,34 @@ export default function ProfilePage() {
           --color-brand-hover: #60a5fa;
           --color-switch-track: #4f46e5;
           --color-switch-icon: #c7d2fe;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
         }
         .group:hover .group-hover\:opacity-100 {
           opacity: 1 !important;
+        }
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scale-in {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes scale-in-up {
+          from { opacity: 0; transform: perspective(1000px) rotateX(10deg) rotateY(10deg) scale3d(0.8, 0.8, 0.8); }
+          to { opacity: 1; transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1); }
+        }
+        .animate-fade-in {
+          animation: fade-in-up 0.6s ease-out forwards;
+          opacity: 0;
+        }
+        .animate-scale-in {
+          animation: scale-in 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
+        }
+        .animate-scale-in-up {
+          animation: scale-in-up 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
         }
       `}</style>
     </div>

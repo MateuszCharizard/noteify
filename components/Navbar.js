@@ -2,9 +2,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
+import { createClient } from '@supabase/supabase-js';
 
 // Dynamically import Avatar with SSR disabled
 const Avatar = dynamic(() => import('./Avatar'), { ssr: false });
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // SVG Icons for theme toggle
 const SunIcon = (props) => (
@@ -27,8 +30,42 @@ const MoonIcon = (props) => (
   </svg>
 );
 
-export default function Navbar({ theme, toggleTheme, profile }) {
+export default function Navbar({ theme, toggleTheme }) {
   const router = useRouter();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching profile in Navbar:', error);
+        } else {
+          setProfile(data);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
   const avatarSrc = profile?.avatar_url || `https://avatar.vercel.sh/${profile?.username || 'A'}.png?size=128`;
   const navRef = useRef(null);
   const indicatorRef = useRef(null);
@@ -36,7 +73,7 @@ export default function Navbar({ theme, toggleTheme, profile }) {
   const isTransitioningRef = useRef(false);
 
   // Map routes to button indices
-  const routes = ['/explore', '/notes', '/profile'];
+  const routes = ['/explore', '/notes', '/settings'];
 
   useEffect(() => {
     // Set initial active index and indicator position without animation
@@ -101,7 +138,13 @@ export default function Navbar({ theme, toggleTheme, profile }) {
           </div>
         </div>
 
-    
+        <div className="absolute top-4 right-4 z-50">
+          <Link href="/profile" legacyBehavior>
+            <a className="block w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--color-border)] hover:border-[var(--color-brand)] transition-colors">
+              <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+            </a>
+          </Link>
+        </div>
 
         {/* Navigation Buttons */}
         <div className="md:flex fixed left-0 bottom-0 md:bottom-auto right-0 p-6 items-center justify-center transition-all">
@@ -136,16 +179,16 @@ export default function Navbar({ theme, toggleTheme, profile }) {
                   Notes
                 </button>
               </Link>
-              <Link href="/profile">
+              <Link href="/settings">
                 <button
                   className={`relative transition-all duration-200 px-4 py-1 rounded-full outline-none focus-visible:ring-3 
                     md:hover:bg-[var(--color-brand)]/20 md:dark:hover:bg-[var(--color-brand)]/10 focus-visible:ring-[var(--color-brand)]/50
                     dark:text-white ${activeIndex === 2 ? 'text-black' : 'text-black dark:text-white'}`}
                   style={{ zIndex: 1 }}
-                  onClick={() => handleButtonClick(2, '/profile')}
+                  onClick={() => handleButtonClick(2, '/settings')}
                   data-active={activeIndex === 2}
                 >
-                  Profile
+                  Settings
                 </button>
               </Link>
             </div>

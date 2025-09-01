@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Avatar from '../components/Avatar';
 import Navbar from '../components/Navbar';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
@@ -37,16 +36,6 @@ export default function SharePage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [theme, setTheme] = useState('light');
   const backgroundRef = useRef(null);
-  // Settings modal state
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState('personalisation');
-  // Account/profile state
-  const [profile, setProfile] = useState(null);
-  const [accountForm, setAccountForm] = useState({ full_name: '', username: '' });
-  // Personalisation state
-  const [animatedBg, setAnimatedBg] = useState(true);
-  const [starCount, setStarCount] = useState(500);
-  const [starSpeed, setStarSpeed] = useState(0.0002);
   // Toast message
   const [toastMessage, setToastMessage] = useState('');
 
@@ -121,72 +110,6 @@ export default function SharePage() {
     }
   }, [toastMessage]);
 
-  // Settings update handlers
-  const handleSettingsUpdate = async (settings) => {
-    if (settings.theme) {
-      setTheme(settings.theme);
-      localStorage.setItem('theme', settings.theme);
-      // Save to Supabase if logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('user_settings').upsert({
-          id: user.id,
-          theme: settings.theme,
-          updated_at: new Date().toISOString()
-        });
-      }
-    }
-    if (settings.animated_bg !== undefined) {
-      setAnimatedBg(settings.animated_bg);
-      localStorage.setItem('animatedBg', settings.animated_bg);
-    }
-    if (settings.star_count) {
-      setStarCount(settings.star_count);
-      localStorage.setItem('starCount', settings.star_count);
-    }
-    if (settings.star_speed) {
-      setStarSpeed(settings.star_speed);
-      localStorage.setItem('starSpeed', settings.star_speed);
-    }
-    if (settings.avatar_url && profile) setProfile(p => ({...p, avatar_url: settings.avatar_url}));
-    setToastMessage('Settings saved!');
-  };
-
-  // Fetch user settings on mount if logged in
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: settings } = await supabase.from('user_settings').select('*').eq('id', user.id).single();
-        if (settings) {
-          setTheme(settings.theme || 'light');
-          setAnimatedBg(settings.animated_bg ?? true);
-          setStarCount(settings.star_count ?? 500);
-          setStarSpeed(settings.star_speed ?? 0.0002);
-          // Sync to localStorage for cross-page sync
-          if (settings.theme) localStorage.setItem('theme', settings.theme);
-          if (settings.animated_bg !== undefined) localStorage.setItem('animatedBg', settings.animated_bg);
-          if (settings.star_count !== undefined) localStorage.setItem('starCount', settings.star_count);
-          if (settings.star_speed !== undefined) localStorage.setItem('starSpeed', settings.star_speed);
-        }
-      }
-    })();
-  }, []);
-
-  const handleAccountUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const updates = { id: user.id, ...accountForm, updated_at: new Date() };
-      await supabase.from('profiles').upsert(updates);
-      setProfile(prev => ({ ...prev, ...accountForm }));
-      setToastMessage('Profile updated!');
-    } catch (e) {
-      setToastMessage('Error updating profile.');
-    }
-  };
-
   // Error state
   if (errorMessage || !note) {
     return (
@@ -213,100 +136,6 @@ export default function SharePage() {
           <div className="bg-neutral-800 text-white px-4 sm:px-6 py-2 rounded-full shadow-lg text-xs sm:text-sm font-medium">{toastMessage}</div>
         </div>
       )}
-      {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px]" onClick={() => setShowSettingsModal(false)}></div>
-          <div
-            role="dialog"
-            className={`relative z-10 border border-[var(--color-border)] rounded-3xl w-full max-w-xs sm:max-w-xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl ${['dark','sunset','forest'].includes(theme) ? 'bg-[#1e293b]/90 text-white' : 'bg-white/95 text-[var(--color-text-primary)]'}`}
-            style={{boxShadow:'0 8px 32px 0 rgba(31,38,135,0.25)', color: ['dark','sunset','forest'].includes(theme) ? '#fff' : '#111'}}
-          >
-            <div className="p-4 border-b border-[var(--color-border)] flex-shrink-0 flex items-center gap-4">
-              <div className="flex gap-2 sm:gap-4">
-                <button onClick={() => setActiveSettingsTab('personalisation')} className={`px-3 py-1 text-sm font-semibold rounded-full transition-all duration-200 ${activeSettingsTab === 'personalisation' ? 'bg-[var(--color-brand)] text-white shadow-md' : (['dark','sunset','forest'].includes(theme) ? 'bg-[#334155]/60 text-white' : 'bg-white/60 text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)]')}`}>Personalisation</button>
-                <button onClick={() => setActiveSettingsTab('account')} className={`px-3 py-1 text-sm font-semibold rounded-full transition-all duration-200 ${activeSettingsTab === 'account' ? 'bg-[var(--color-brand)] text-white shadow-md' : (['dark','sunset','forest'].includes(theme) ? 'bg-[#334155]/60 text-white' : 'bg-white/60 text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)]')}`}>Account</button>
-              </div>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1">
-              {activeSettingsTab === 'personalisation' && (
-                <div className="space-y-10">
-                  <div>
-                    <h3 className="font-semibold text-base mb-4 tracking-wide">Color Theme</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {themes.map(t => {
-                        const isDarkPreview = ['sunset','forest'].includes(t.id);
-                        return (
-                          <div key={t.id} className="flex flex-col items-center">
-                            <button
-                              onClick={() => handleSettingsUpdate({ theme: t.id })}
-                              className={`w-14 h-14 sm:w-20 sm:h-20 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center shadow-md ${theme === t.id ? 'border-[var(--color-brand)] scale-105 ring-2 ring-[var(--color-brand)]' : 'border-[var(--color-border)] hover:scale-105'}`}
-                              style={{
-                                background: isDarkPreview ? 'rgba(30,41,59,0.85)' : t.vars['--color-background'],
-                                color: ['dark','sunset','forest'].includes(theme) ? '#fff' : '#111'
-                              }}
-                            >
-                              <span className="block w-7 h-7 sm:w-10 sm:h-10 rounded-full" style={{ background: t.vars['--color-brand'] }}></span>
-                            </button>
-                            <p className="text-center text-xs sm:text-sm mt-2 font-medium opacity-80" style={{color: ['dark','sunset','forest'].includes(theme) ? '#fff' : '#111'}}>{t.name}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="border-t border-[var(--color-border)] pt-8">
-                    <h3 className="font-semibold text-base mb-4 tracking-wide">Animated Background</h3>
-                    <div className={`flex items-center justify-between p-4 rounded-2xl shadow-sm ${['dark','sunset','forest'].includes(theme) ? 'bg-[#334155]/80' : 'bg-white/80'}` }>
-                      <label htmlFor="bg-toggle" className="font-medium text-sm">Enable Animation</label>
-                      <button onClick={() => handleSettingsUpdate({ animated_bg: !animatedBg })} role="switch" aria-checked={animatedBg} className={`relative inline-flex items-center h-7 w-14 rounded-full p-1 transition-colors duration-200 ${animatedBg ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)]'}`}> 
-                        <span className={`block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform duration-200 ${animatedBg ? 'translate-x-7' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                    <fieldset className={`mt-6 space-y-6 transition-opacity ${!animatedBg ? 'opacity-50 pointer-events-none' : ''}`}> 
-                      <div>
-                        <label htmlFor="star-count" className="text-sm flex justify-between font-medium"><span>Star Count</span><span>{starCount}</span></label>
-                        <input id="star-count" type="range" min="100" max="2000" step="100" value={starCount} onChange={(e) => setStarCount(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_count: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
-                      </div>
-                      <div>
-                        <label htmlFor="star-speed" className="text-sm flex justify-between font-medium"><span>Animation Speed</span><span>{(starSpeed * 10000).toFixed(1)}</span></label>
-                        <input id="star-speed" type="range" min="0.0001" max="0.001" step="0.0001" value={starSpeed} onChange={(e) => setStarSpeed(Number(e.target.value))} onMouseUp={(e) => handleSettingsUpdate({ star_speed: Number(e.target.value) })} className="w-full h-2 bg-gradient-to-r from-[var(--color-brand-muted)] to-[var(--color-brand)] rounded-lg appearance-none cursor-pointer accent-[var(--color-brand)]" disabled={!animatedBg} />
-                      </div>
-                    </fieldset>
-                  </div>
-                </div>
-              )}
-              {activeSettingsTab === 'account' && profile && (
-                <form onSubmit={handleAccountUpdate} className="space-y-8">
-                  <div>
-                    <h3 className="font-semibold text-base mb-4 tracking-wide">Profile Picture</h3>
-                    <div className="flex items-center gap-4">
-                      <Avatar url={profile.avatar_url} onUpload={(base64Str) => handleSettingsUpdate({ avatar_url: base64Str })} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="fullName" className="block text-sm font-medium mb-1">Full Name</label>
-                      <input type="text" id="fullName" value={accountForm.full_name} onChange={e => setAccountForm({...accountForm, full_name: e.target.value})} className="w-full p-3 text-sm bg-white/70 dark:bg-[#1e293b]/70 rounded-xl focus:ring-2 focus:ring-[var(--color-brand)] border border-[var(--color-border)] outline-none shadow-sm" />
-                    </div>
-                    <div>
-                      <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
-                      <input type="text" id="username" value={accountForm.username} onChange={e => setAccountForm({...accountForm, username: e.target.value})} className="w-full p-3 text-sm bg-white/70 dark:bg-[#1e293b]/70 rounded-xl focus:ring-2 focus:ring-[var(--color-brand)] border border-[var(--color-border)] outline-none shadow-sm" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-4">
-                    <button type="submit" className="px-6 py-2 text-sm font-semibold bg-[var(--color-brand)] text-white rounded-full shadow-md hover:opacity-90 transition-opacity">Save Changes</button>
-                  </div>
-                </form>
-              )}
-              {activeSettingsTab === 'account' && !profile && (
-                <div className="text-center text-[var(--color-text-secondary)] text-sm">You must be logged in to edit your account.</div>
-              )}
-            </div>
-            <div className="p-4 border-t border-[var(--color-border)] flex-shrink-0 flex justify-end items-center gap-4">
-              <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 text-sm font-semibold bg-[var(--color-bg-subtle-hover)] text-[var(--color-text-primary)] rounded-full shadow-sm hover:opacity-90 transition-all">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
       <Navbar
         center={null}
         right={
@@ -323,13 +152,6 @@ export default function SharePage() {
               >
                 {theme === 'dark' ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />}
               </span>
-            </button>
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              aria-label="Open settings"
-              className="p-2 rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand)] ml-2"
-            >
-              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="m8 4.07 1 1.73"></path><path d="m22 12h-2"></path><path d="m4 12H2"></path><path d="m20.66 7-1.73-1"></path><path d="m4.07 16 1.73 1"></path></svg>
             </button>
           </>
         }
