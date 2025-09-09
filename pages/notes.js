@@ -443,8 +443,8 @@ export default function NotesPage() {
           </div>
         )}
 
-        <aside className={`fixed lg:static z-30 w-64 sm:w-72 min-h-screen bg-[var(--color-bg-sidebar)] backdrop-blur-sm border-r border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'}`}>
-          <div className="p-3 sm:p-4 flex-shrink-0 border-b border-[var(--color-border)] flex items-center justify-between">
+        <aside className={`fixed lg:static z-30 w-64 sm:w-72 min-h-screen bg-[var(--color-bg-sidebar)] backdrop-blur-sm  border-[var(--color-border)] flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'}`}>
+          <div className="p-3 sm:p-4 flex-shrink-0  border-[var(--color-border)] flex items-center justify-between">
             <Link href="/notes" className="flex items-center gap-2 group">
               <FileTextIcon className="w-5 sm:w-6 h-5 sm:h-6 text-[var(--color-brand)] group-hover:scale-110 transition-transform duration-200" />
               <h1 className="font-bold text-lg sm:text-xl text-[var(--color-text-primary)]">Noteify</h1>
@@ -527,15 +527,7 @@ export default function NotesPage() {
               ) : null
             )}
           </nav>
-          <div className="p-3 sm:p-4 flex-shrink-0 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-            <Link href="/profile" className="flex-1 flex items-center gap-2 sm:gap-3 group p-1 rounded-md min-w-0">
-              <img src={avatarSrc} alt="Profile" className="w-6 sm:w-8 h-6 sm:h-8 rounded-full object-cover border-2 border-[var(--color-border)] group-hover:border-[var(--color-brand)] transition-transform duration-200 group-hover:scale-110" />
-              <div className="truncate"><span className="font-semibold text-xs sm:text-sm text-[var(--color-text-primary)] group-hover:text-[var(--color-brand)] transition-colors truncate">{profile?.full_name || profile?.username || 'User'}</span></div>
-            </Link>
-            <button onClick={() => setShowSettingsModal(true)} aria-label="Open settings" className="p-2 rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-subtle-hover)] transition-transform duration-200 hover:scale-105">
-              <CogIcon className="w-4 sm:w-5 h-4 sm:h-5" />
-            </button>
-          </div>
+          
         </aside>
 
         <main className="flex-1 flex flex-col relative z-10">
@@ -596,7 +588,7 @@ export default function NotesPage() {
                           setToastMessage('Note is no longer public.');
                         }
                       }}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none border-2 ${isPublic ? 'bg-[var(--color-brand)] border-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)] border-[var(--color-border)]'} transition-transform duration-200 hover:scale-105`}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none  ${isPublic ? 'bg-[var(--color-brand)] border-[var(--color-brand)]' : 'bg-[var(--color-bg-subtle-hover)] border-[var(--color-border)]'} transition-transform duration-200 hover:scale-105`}
                       style={{ boxShadow: isPublic ? '0 0 0 2px var(--color-brand)' : '0 0 0 1px var(--color-border)' }}
                     >
                       <span

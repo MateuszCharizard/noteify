@@ -23,16 +23,6 @@ const LogoIcon = (props) => (
     <path d="M3 9.75L16 17L29 9.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
-const SunIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-  </svg>
-);
-const MoonIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-  </svg>
-);
 const SpinnerIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" {...props}>
     <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
@@ -40,7 +30,6 @@ const SpinnerIcon = (props) => (
 );
 
 export default function AuthPage() {
-  const [theme, setTheme] = useState('light');
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,34 +38,12 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
-  // Removed animated background
+  const [formKey, setFormKey] = useState(0);
 
-  // Theme Management
+  // Set dark mode
   useEffect(() => {
-    console.log('Initializing theme...');
-    if (typeof window === 'undefined') {
-      console.log('Skipping theme setup: window undefined');
-      return;
-    }
-    const savedTheme = localStorage.getItem('theme');
-    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    console.log('Theme initialized:', initialTheme);
+    document.documentElement.classList.add('dark');
   }, []);
-
-  useEffect(() => {
-    console.log('Applying theme:', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-
 
   // Auth Check
   useEffect(() => {
@@ -126,11 +93,11 @@ export default function AuthPage() {
         });
         if (error) throw error;
         setIsSignUp(false);
-        setShowConfirmPopup(true);
         setEmail("");
         setPassword("");
         setUsername("");
         setFullName("");
+        setFormKey(prev => prev + 1);
         return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -145,70 +112,40 @@ export default function AuthPage() {
     }
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleSignUp = () => {
+    setIsSignUp(!isSignUp);
+    setFormKey(prev => prev + 1);
   };
 
   if (initialLoading) {
     console.log('Rendering initial loading screen');
     return (
       <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
-        <SpinnerIcon className="w-10 h-10 text-[var(--color-text-primary)]" />
+        <SpinnerIcon className="w-10 h-10 text-[var(--color-text-primary)] animate-scale-in" style={{ animationDelay: '0.1s' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-300 flex flex-col items-center justify-center relative overflow-hidden font-sans p-4">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] transition-colors duration-500 flex flex-col items-center justify-center relative overflow-hidden font-sans p-4 select-none">
       <Head>
         <title>Noteify - Auth</title>
       </Head>
 
-
-
-      <header className="absolute top-0 right-0 p-6 z-20">
-        <button
-          onClick={toggleTheme}
-          role="switch"
-          aria-checked={theme === 'dark'}
-          className="relative inline-flex items-center h-8 w-14 rounded-full p-1 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-brand)] focus:ring-offset-[var(--color-background)] bg-[var(--color-switch-track)]"
-        >
-          <span className="sr-only">Toggle theme</span>
-          <span
-            className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
-              theme === 'dark' ? 'translate-x-6' : 'translate-x-0'
-            }`}
-          >
-            {theme === 'dark' 
-              ? <MoonIcon className="h-4 w-4 text-[var(--color-switch-icon)]" /> 
-              : <SunIcon className="h-4 w-4 text-[var(--color-switch-icon)]" />
-            }
-          </span>
-        </button>
-      </header>
-
-      {showConfirmPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-xl p-6 max-w-xs w-full flex flex-col items-center">
-            <span className="text-3xl mb-2">📧</span>
-            <h2 className="text-lg font-bold mb-2 text-center">Check your email</h2>
-            <p className="text-sm text-[var(--color-text-secondary)] text-center mb-4">We've sent a confirmation link to your email. Please confirm your account to log in.</p>
-            <button onClick={() => setShowConfirmPopup(false)} className="mt-2 px-4 py-2 rounded bg-[var(--color-brand)] text-white font-semibold">OK</button>
-          </div>
-        </div>
-      )}
-      <main className="w-full max-w-md mx-auto p-8 z-10 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg border border-[var(--color-border)]">
+      <main className="w-full max-w-md mx-auto p-8 z-10 bg-[var(--color-bg-subtle-translucent)] backdrop-blur-md rounded-2xl shadow-lg border border-[var(--color-border)] animate-scale-in-up" style={{ animationDelay: '0.2s' }} key={formKey}>
         <div className="text-center mb-8">
-          <LogoIcon className="mx-auto h-12 w-12 text-[var(--color-brand)]" />
-          <h1 className="text-3xl font-bold mt-4">{isSignUp ? 'Create Your Account' : 'Welcome Back'}</h1>
-          <p className="text-[var(--color-text-secondary)] mt-1">
+          <LogoIcon className="mx-auto h-12 w-12 text-[var(--color-brand)] animate-scale-in" style={{ animationDelay: '0.3s' }} />
+          <h1 className="text-3xl font-bold mt-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            {isSignUp ? 'Create Your Account' : 'Welcome Back'}
+          </h1>
+          <p className="text-[var(--color-text-secondary)] mt-1 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
             {isSignUp ? 'Get started with your new workspace.' : 'Sign in to continue to Noteify.'}
           </p>
         </div>
-        <form onSubmit={handleAuth} className="space-y-4">
+        <form onSubmit={handleAuth} className="space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
           {isSignUp && (
             <>
-              <div>
+              <div className="animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
                 <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Full Name</label>
                 <input
                   type="text"
@@ -218,7 +155,7 @@ export default function AuthPage() {
                   required
                 />
               </div>
-              <div>
+              <div className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Username</label>
                 <input
                   type="text"
@@ -230,7 +167,7 @@ export default function AuthPage() {
               </div>
             </>
           )}
-          <div>
+          <div className="animate-fade-in-up" style={{ animationDelay: isSignUp ? '0.9s' : '0.7s' }}>
             <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Email</label>
             <input
               type="email"
@@ -240,7 +177,7 @@ export default function AuthPage() {
               required
             />
           </div>
-          <div>
+          <div className="animate-fade-in-up" style={{ animationDelay: isSignUp ? '1.0s' : '0.8s' }}>
             <label className="block text-sm font-semibold mb-1 text-[var(--color-text-secondary)]">Password</label>
             <input
               type="password"
@@ -253,15 +190,24 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full font-semibold transition-colors hover:bg-[var(--color-brand-hover)] disabled:opacity-50 flex items-center justify-center"
+            className="w-full mt-2 px-6 py-3 bg-[var(--color-brand)] text-white rounded-full font-semibold transition-colors hover:bg-[var(--color-brand-hover)] disabled:opacity-50 flex items-center justify-center animate-scale-in"
+            style={{ animationDelay: isSignUp ? '1.1s' : '0.9s' }}
           >
             {loading ? <SpinnerIcon className="w-5 h-5"/> : (isSignUp ? 'Sign Up' : 'Login')}
           </button>
-          {error && <p className="text-red-500 text-center text-sm mt-2">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-center text-sm mt-2 animate-fade-in-up" style={{ animationDelay: isSignUp ? '1.2s' : '1.0s' }}>
+              {error}
+            </p>
+          )}
         </form>
-        <p className="mt-6 text-center text-sm">
+        <p className="mt-6 text-center text-sm animate-fade-in-up" style={{ animationDelay: isSignUp ? '1.3s' : '1.1s' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="font-semibold text-[var(--color-brand)] hover:underline ml-1">
+          <button 
+            onClick={toggleSignUp} 
+            className="font-semibold text-[var(--color-brand)] hover:underline ml-1 animate-scale-in"
+            style={{ animationDelay: isSignUp ? '1.4s' : '1.2s' }}
+          >
             {isSignUp ? 'Login' : 'Sign Up'}
           </button>
         </p>
@@ -269,19 +215,6 @@ export default function AuthPage() {
 
       <style jsx global>{`
         :root {
-          --color-background: #f9fafb;
-          --color-bg-subtle: #f3f4f6;
-          --color-bg-subtle-hover: #e5e7eb;
-          --color-bg-subtle-translucent: rgba(249, 250, 251, 0.8);
-          --color-text-primary: #171717;
-          --color-text-secondary: #6b7280;
-          --color-border: #d1d5db;
-          --color-brand: #3b82f6;
-          --color-brand-hover: #2563eb;
-          --color-switch-track: #fcd34d;
-          --color-switch-icon: #f59e0b;
-        }
-        .dark {
           --color-background: #0a0a0a;
           --color-bg-subtle: #171717;
           --color-bg-subtle-hover: #262626;
@@ -291,8 +224,37 @@ export default function AuthPage() {
           --color-border: #4b5563;
           --color-brand: #3b82f6;
           --color-brand-hover: #60a5fa;
-          --color-switch-track: #4f46e5;
-          --color-switch-icon: #c7d2fe;
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        }
+
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scale-in {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes scale-in-up {
+          from { opacity: 0; transform: perspective(1000px) rotateX(10deg) rotateY(10deg) scale3d(0.8, 0.8, 0.8); }
+          to { opacity: 1; transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1); }
+        }
+
+        .animate-fade-in {
+          animation: fade-in-up 0.6s ease-out forwards;
+          opacity: 0;
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
+        }
+
+        .animate-scale-in-up {
+          animation: scale-in-up 0.6s cubic-bezier(0.03, 0.98, 0.52, 0.99) forwards;
+          opacity: 0;
         }
       `}</style>
     </div>
